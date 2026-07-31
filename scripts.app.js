@@ -1,56 +1,74 @@
-// Auto Scadenze - logica demo
-
-const datiDemo = {
-  "bmw-x1": {
-    nome: "BMW X1",
-    scadenze: [
-      { tipo: "Revisione", data: "2026-10-14", costo: "€ 65", stato: "In arrivo" },
-      { tipo: "Bollo", data: "2026-09-01", costo: "€ 210", stato: "Da pagare" },
-      { tipo: "RC Auto", data: "2027-05-07", costo: "€ 480", stato: "Attiva" }
-    ]
-  },
-  "fiat-500e": {
-    nome: "Fiat 500e",
-    scadenze: [
-      { tipo: "RC Auto", data: "2027-02-18", costo: "€ 390", stato: "Attiva" },
-      { tipo: "Bollo", data: "2026-11-20", costo: "€ 0 (elettrica)", stato: "Esente" }
-    ]
-  }
-};
-
-function aggiornaPannello(autoKey) {
-  const auto = datiDemo[autoKey];
-  if (!auto) return;
-
-  const scadenza = auto.scadenze[0];
-
-  const titolo = document.querySelector("[data-detail-titolo]");
-  const data = document.querySelector("[data-detail-data]");
-  const costo = document.querySelector("[data-detail-costo]");
-  const stato = document.querySelector("[data-detail-stato]");
-
-  if (titolo) titolo.textContent = auto.nome + " — " + scadenza.tipo;
-  if (data) data.textContent = scadenza.data;
-  if (costo) costo.textContent = scadenza.costo;
-  if (stato) stato.textContent = scadenza.stato;
-}
+// Auto Scadenze - logica demo (si aggancia al markup esistente in index.html)
 
 document.addEventListener("DOMContentLoaded", () => {
-  const bottoniAuto = document.querySelectorAll("[data-auto-select]");
+  const datiDemo = {
+    0: {
+      nome: "BMW X1 xDrive25e",
+      titolo: "Revisione BMW X1",
+      badge: "Scade tra 18 giorni",
+      data: "12 ottobre 2026",
+      centro: "Officina autorizzata",
+      costo: "€ 79",
+      stato: "Da prenotare"
+    },
+    1: {
+      nome: "Fiat 500e",
+      titolo: "RC Auto Fiat 500e",
+      badge: "Rinnovo il 18 febbraio",
+      data: "18 febbraio 2027",
+      centro: "Compagnia assicurativa",
+      costo: "€ 390",
+      stato: "Attiva"
+    }
+  };
 
-  bottoniAuto.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      bottoniAuto.forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
+  const carCards = document.querySelectorAll(".car-card");
+  const detailPanel = document.querySelector(".detail-panel");
+  if (!detailPanel) return;
 
-      const autoKey = btn.getAttribute("data-auto-select");
-      aggiornaPannello(autoKey);
+  const detailTitle = detailPanel.querySelector(".section-title");
+  const detailBadge = detailPanel.querySelector(".pill-urgent, .pill-soon");
+  const detailFields = detailPanel.querySelectorAll(".detail-grid strong");
+
+  function aggiornaPannello(index) {
+    const info = datiDemo[index];
+    if (!info) return;
+
+    if (detailTitle) detailTitle.textContent = info.titolo;
+    if (detailBadge) detailBadge.lastChild.textContent = info.badge;
+
+    if (detailFields && detailFields.length >= 4) {
+      detailFields[0].textContent = info.data;
+      detailFields[1].textContent = info.centro;
+      detailFields[2].textContent = info.costo;
+      detailFields[3].textContent = info.stato;
+    }
+  }
+
+  carCards.forEach((card, index) => {
+    card.addEventListener("click", () => {
+      carCards.forEach((c) => c.classList.remove("active"));
+      card.classList.add("active");
+      aggiornaPannello(index);
     });
   });
 
-  // Inizializza con la prima auto se presente
-  if (bottoniAuto.length > 0) {
-    const primaKey = bottoniAuto[0].getAttribute("data-auto-select");
-    aggiornaPannello(primaKey);
+  // Toggle tema chiaro/scuro (se presente il bottone)
+  const themeToggle = document.querySelector("[data-theme-toggle]");
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      const html = document.documentElement;
+      const current = html.getAttribute("data-theme");
+      html.setAttribute("data-theme", current === "dark" ? "light" : "dark");
+    });
   }
+
+  // Navigazione tab mobile (solo visuale, evidenzia il pulsante attivo)
+  const mobileTabs = document.querySelectorAll(".mobile-tabs button");
+  mobileTabs.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      mobileTabs.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+    });
+  });
 });
