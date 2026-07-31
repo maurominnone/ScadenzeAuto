@@ -1,0 +1,25 @@
+[
+  {
+    "id": "car-1",
+    "name": "Audi A4 Avant",
+    "plate": "AB123CD",
+    "expiries": [
+      {
+        "id": "exp-1",
+        "type": "assicurazione",
+        "date": "2026-09-15",
+        "endDate": "2027-09-15",
+        "cost": 650,
+        "notes": "Polizza Allianz"
+      },
+      {
+        "id": "exp-2",
+        "type": "bollo",
+        "date": "2026-10-30",
+        "endDate": "",
+        "cost": 280,
+        "notes": "Pagamento online"
+      }
+    ]
+  }
+]
