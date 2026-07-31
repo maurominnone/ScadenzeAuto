@@ -3,11 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Auto Scadenze - Cruscotto Operativo</title>
+  <title>Auto Scadenze - Sync GitHub</title>
   <style>
-    /* ==========================================
-       1. VARIABILI CSS E TEMA (CHIARO / SCURO)
-       ========================================== */
     :root {
       --bg-primary: #f8fafc;
       --bg-secondary: #ffffff;
@@ -29,7 +26,6 @@
       --success: #10b981;
       --success-bg: #ecfdf5;
 
-      /* Tipi di Scadenza */
       --cat-bollo: #8b5cf6;
       --cat-revisione: #06b6d4;
       --cat-assicurazione: #3b82f6;
@@ -38,9 +34,7 @@
       --cat-tagliando: #ec4899;
 
       --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-      
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
       --radius: 12px;
       --transition: all 0.2s ease;
     }
@@ -50,45 +44,26 @@
       --bg-secondary: #1e293b;
       --bg-tertiary: #334155;
       --border-color: #334155;
-
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
-
       --accent-light: rgba(59, 130, 246, 0.15);
       --danger-bg: rgba(239, 68, 68, 0.15);
       --warning-bg: rgba(245, 158, 11, 0.15);
       --success-bg: rgba(16, 185, 129, 0.15);
-
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
-      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5);
     }
 
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg-primary);
       color: var(--text-main);
-      line-height: 1.5;
       display: flex;
       height: 100vh;
       overflow: hidden;
     }
 
-    /* ==========================================
-       2. LAYOUT PRINCIPALE
-       ========================================== */
-    .app-container {
-      display: flex;
-      width: 100%;
-      height: 100vh;
-      overflow: hidden;
-    }
+    .app-container { display: flex; width: 100%; height: 100vh; overflow: hidden; }
 
     .sidebar {
       width: 280px;
@@ -108,48 +83,30 @@
       border-bottom: 1px solid var(--border-color);
     }
 
-    .brand h1 {
-      font-size: 1.15rem;
-      font-weight: 700;
+    .brand h1 { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+
+    .sync-status {
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      color: var(--accent);
-    }
-
-    .theme-toggle {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      padding: 0.4rem;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .theme-toggle:hover {
       background-color: var(--bg-tertiary);
-      color: var(--text-main);
+      border-bottom: 1px solid var(--border-color);
     }
 
-    .car-list-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem;
+    .sync-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--text-muted);
     }
+    .sync-dot.online { background-color: var(--success); }
+    .sync-dot.syncing { background-color: var(--warning); }
+    .sync-dot.error { background-color: var(--danger); }
 
-    .section-title {
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 0.75rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    .car-list-container { flex: 1; overflow-y: auto; padding: 1rem; }
+    .section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem; display: flex; justify-content: space-between; }
 
     .car-item {
       padding: 0.75rem 1rem;
@@ -157,625 +114,117 @@
       margin-bottom: 0.5rem;
       cursor: pointer;
       border: 1px solid transparent;
-      transition: var(--transition);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
+    .car-item:hover { background-color: var(--bg-tertiary); }
+    .car-item.active { background-color: var(--accent-light); border-color: var(--accent); }
 
-    .car-item:hover {
-      background-color: var(--bg-tertiary);
-    }
+    .car-info .car-name { font-weight: 600; font-size: 0.9rem; }
+    .car-info .car-plate { font-size: 0.75rem; color: var(--text-muted); font-family: monospace; background: var(--bg-tertiary); padding: 1px 4px; border-radius: 4px; }
 
-    .car-item.active {
-      background-color: var(--accent-light);
-      border-color: var(--accent);
-    }
+    .btn-delete-car { background: none; border: none; color: var(--text-muted); cursor: pointer; opacity: 0; padding: 4px; }
+    .car-item:hover .btn-delete-car { opacity: 1; }
+    .btn-delete-car:hover { color: var(--danger); }
 
-    .car-info .car-name {
-      font-weight: 600;
-      font-size: 0.95rem;
-    }
+    .sidebar-actions { padding: 1rem; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem; }
 
-    .car-info .car-plate {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      font-family: monospace;
-      background: var(--bg-tertiary);
-      padding: 1px 6px;
-      border-radius: 4px;
-      display: inline-block;
-      margin-top: 2px;
-    }
+    .main-content { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
 
-    .btn-delete-car {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      opacity: 0;
-      transition: var(--transition);
-      padding: 4px;
-      border-radius: 4px;
-    }
+    .dashboard-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    .dashboard-title h2 { font-size: 1.5rem; font-weight: 700; }
+    .dashboard-title p { color: var(--text-muted); font-size: 0.85rem; }
 
-    .car-item:hover .btn-delete-car {
-      opacity: 1;
-    }
+    .detail-panel { width: 320px; background-color: var(--bg-secondary); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; }
+    .detail-header { padding: 1.25rem; border-bottom: 1px solid var(--border-color); font-weight: 700; }
+    .detail-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 1.25rem; }
 
-    .btn-delete-car:hover {
-      color: var(--danger);
-      background-color: var(--danger-bg);
-    }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.6rem 1rem; font-size: 0.85rem; font-weight: 600; border-radius: var(--radius); border: 1px solid transparent; cursor: pointer; transition: var(--transition); width: 100%; }
+    .btn-primary { background-color: var(--accent); color: var(--text-white); }
+    .btn-primary:hover { background-color: var(--accent-hover); }
+    .btn-secondary { background-color: var(--bg-tertiary); color: var(--text-main); border-color: var(--border-color); }
+    .btn-danger { background-color: var(--danger-bg); color: var(--danger); }
+    .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.75rem; width: auto; }
 
-    .sidebar-actions {
-      padding: 1rem;
-      border-top: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .sync-actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .main-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    .dashboard-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-
-    .dashboard-title h2 {
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
-    .dashboard-title p {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-    }
-
-    .detail-panel {
-      width: 320px;
-      background-color: var(--bg-secondary);
-      border-left: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-      overflow-y: auto;
-    }
-
-    .detail-header {
-      padding: 1.25rem;
-      border-bottom: 1px solid var(--border-color);
-      font-weight: 700;
-      font-size: 1.1rem;
-    }
-
-    .detail-body {
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-
-    /* ==========================================
-       3. COMPONENTI UI
-       ========================================== */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 0.6rem 1rem;
-      font-size: 0.9rem;
-      font-weight: 600;
-      border-radius: var(--radius);
-      border: 1px solid transparent;
-      cursor: pointer;
-      transition: var(--transition);
-      width: 100%;
-    }
-
-    .btn-primary {
-      background-color: var(--accent);
-      color: var(--text-white);
-    }
-    .btn-primary:hover {
-      background-color: var(--accent-hover);
-    }
-
-    .btn-secondary {
-      background-color: var(--bg-tertiary);
-      color: var(--text-main);
-      border-color: var(--border-color);
-    }
-    .btn-secondary:hover {
-      background-color: var(--border-color);
-    }
-
-    .btn-danger {
-      background-color: var(--danger-bg);
-      color: var(--danger);
-    }
-    .btn-danger:hover {
-      background-color: var(--danger);
-      color: var(--text-white);
-    }
-
-    .btn-sm {
-      padding: 0.3rem 0.6rem;
-      font-size: 0.8rem;
-      width: auto;
-    }
-
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1rem;
-    }
-
-    .kpi-card {
-      background-color: var(--bg-secondary);
-      padding: 1.25rem;
-      border-radius: var(--radius);
-      border: 1px solid var(--border-color);
-      box-shadow: var(--shadow-sm);
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .kpi-card .kpi-label {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .kpi-card .kpi-value {
-      font-size: 1.8rem;
-      font-weight: 700;
-      line-height: 1;
-    }
-
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+    .kpi-card { background-color: var(--bg-secondary); padding: 1rem; border-radius: var(--radius); border: 1px solid var(--border-color); }
+    .kpi-label { font-size: 0.8rem; color: var(--text-muted); }
+    .kpi-value { font-size: 1.6rem; font-weight: 700; margin-top: 0.2rem; }
     .kpi-card.urgent .kpi-value { color: var(--danger); }
-    .kpi-card.warning .kpi-value { color: var(--warning); }
     .kpi-card.info .kpi-value { color: var(--accent); }
 
-    .view-card {
-      background-color: var(--bg-secondary);
-      border-radius: var(--radius);
-      border: 1px solid var(--border-color);
-      padding: 1.25rem;
-      box-shadow: var(--shadow-sm);
-    }
+    .view-card { background-color: var(--bg-secondary); border-radius: var(--radius); border: 1px solid var(--border-color); padding: 1.25rem; }
+    .view-card-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; }
 
-    .view-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
+    .timeline-container { display: flex; flex-direction: column; gap: 0.5rem; overflow-x: auto; }
+    .timeline-months { display: grid; grid-template-columns: repeat(12, 1fr); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; min-width: 600px; }
+    .month-col { text-align: center; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+    .timeline-track { position: relative; height: 40px; background-color: var(--bg-tertiary); border-radius: 8px; min-width: 600px; }
+    .timeline-marker { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 26px; height: 26px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
 
-    .view-card-title {
-      font-size: 1rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
+    .gantt-container { display: flex; flex-direction: column; gap: 0.75rem; min-width: 600px; overflow-x: auto; }
+    .gantt-row { display: flex; align-items: center; gap: 1rem; }
+    .gantt-label { width: 140px; font-size: 0.8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gantt-track-bg { flex: 1; height: 22px; background-color: var(--bg-tertiary); border-radius: 6px; position: relative; }
+    .gantt-bar { position: absolute; top: 0; height: 100%; border-radius: 6px; opacity: 0.85; cursor: pointer; display: flex; align-items: center; padding: 0 0.5rem; color: white; font-size: 0.65rem; font-weight: 600; }
 
-    .timeline-container {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      overflow-x: auto;
-    }
+    .expiry-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .expiry-item { background-color: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.75rem; display: flex; flex-direction: column; gap: 0.3rem; cursor: pointer; }
+    .expiry-item:hover { border-color: var(--accent); }
+    .expiry-header { display: flex; justify-content: space-between; align-items: center; }
+    .expiry-title { font-weight: 600; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; }
+    .expiry-dates { font-size: 0.75rem; color: var(--text-muted); }
+    .expiry-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 0.2rem; font-size: 0.8rem; }
+    .expiry-cost { font-weight: 700; }
 
-    .timeline-months {
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 0.5rem;
-      min-width: 600px;
-    }
-
-    .month-col {
-      text-align: center;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-
-    .timeline-track {
-      position: relative;
-      height: 48px;
-      background-color: var(--bg-tertiary);
-      border-radius: 8px;
-      min-width: 600px;
-    }
-
-    .timeline-marker {
-      position: absolute;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      font-weight: 700;
-      box-shadow: var(--shadow-md);
-      cursor: pointer;
-      transition: var(--transition);
-      z-index: 2;
-    }
-
-    .timeline-marker:hover {
-      transform: translate(-50%, -50%) scale(1.2);
-      z-index: 5;
-    }
-
-    .gantt-container {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      min-width: 600px;
-      overflow-x: auto;
-    }
-
-    .gantt-row {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .gantt-label {
-      width: 150px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      flex-shrink: 0;
-    }
-
-    .gantt-track-bg {
-      flex: 1;
-      height: 24px;
-      background-color: var(--bg-tertiary);
-      border-radius: 6px;
-      position: relative;
-    }
-
-    .gantt-bar {
-      position: absolute;
-      top: 0;
-      height: 100%;
-      border-radius: 6px;
-      opacity: 0.85;
-      cursor: pointer;
-      transition: var(--transition);
-      display: flex;
-      align-items: center;
-      padding: 0 0.5rem;
-      color: white;
-      font-size: 0.7rem;
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-    }
-
-    .gantt-bar:hover {
-      opacity: 1;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-
+    .badge { padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
     .badge-urgente { background-color: var(--danger-bg); color: var(--danger); }
     .badge-inarrivo { background-color: var(--warning-bg); color: var(--warning); }
     .badge-ok { background-color: var(--success-bg); color: var(--success); }
+    .cat-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 
-    .cat-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      display: inline-block;
-    }
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal { background-color: var(--bg-secondary); border-radius: var(--radius); width: 100%; max-width: 480px; padding: 1.5rem; border: 1px solid var(--border-color); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .modal-header h3 { font-size: 1.1rem; font-weight: 700; }
+    .btn-close { background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer; }
 
-    .expiry-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
+    .form-group { margin-bottom: 0.8rem; display: flex; flex-direction: column; gap: 0.3rem; }
+    .form-group label { font-size: 0.8rem; font-weight: 600; }
+    .form-control { width: 100%; padding: 0.5rem 0.7rem; border-radius: var(--radius); border: 1px solid var(--border-color); background-color: var(--bg-primary); color: var(--text-main); font-size: 0.85rem; outline: none; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.2rem; }
 
-    .expiry-item {
-      background-color: var(--bg-primary);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius);
-      padding: 0.85rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      cursor: pointer;
-      transition: var(--transition);
-    }
+    .mobile-tab-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--bg-secondary); border-top: 1px solid var(--border-color); z-index: 50; height: 55px; }
+    .mobile-tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.65rem; color: var(--text-muted); background: none; border: none; }
+    .mobile-tab-item.active { color: var(--accent); font-weight: 600; }
 
-    .expiry-item:hover, .expiry-item.active {
-      border-color: var(--accent);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .expiry-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .expiry-title {
-      font-weight: 600;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    .expiry-dates {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-
-    .expiry-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 0.2rem;
-      font-size: 0.85rem;
-    }
-
-    .expiry-cost {
-      font-weight: 700;
-    }
-
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(2px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease;
-    }
-
-    .modal-overlay.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .modal {
-      background-color: var(--bg-secondary);
-      border-radius: var(--radius);
-      width: 100%;
-      max-width: 480px;
-      padding: 1.5rem;
-      box-shadow: var(--shadow-lg);
-      border: 1px solid var(--border-color);
-      transform: translateY(20px);
-      transition: transform 0.2s ease;
-    }
-
-    .modal-overlay.open .modal {
-      transform: translateY(0);
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.25rem;
-    }
-
-    .modal-header h3 {
-      font-size: 1.15rem;
-      font-weight: 700;
-    }
-
-    .btn-close {
-      background: none;
-      border: none;
-      font-size: 1.25rem;
-      color: var(--text-muted);
-      cursor: pointer;
-    }
-
-    .form-group {
-      margin-bottom: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-    }
-
-    .form-group label {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-main);
-    }
-
-    .form-control {
-      width: 100%;
-      padding: 0.6rem 0.8rem;
-      border-radius: var(--radius);
-      border: 1px solid var(--border-color);
-      background-color: var(--bg-primary);
-      color: var(--text-main);
-      font-size: 0.9rem;
-      outline: none;
-      transition: var(--transition);
-    }
-
-    .form-control:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px var(--accent-light);
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
-
-    .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.75rem;
-      margin-top: 1.5rem;
-    }
-
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-top: 0.5rem;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 2rem 1rem;
-      color: var(--text-muted);
-      font-size: 0.9rem;
-    }
-
-    .mobile-tab-bar {
-      display: none;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background-color: var(--bg-secondary);
-      border-top: 1px solid var(--border-color);
-      z-index: 50;
-      height: 60px;
-    }
-
-    .mobile-tab-item {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      background: none;
-      border: none;
-      gap: 2px;
-      cursor: pointer;
-    }
-
-    .mobile-tab-item.active {
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    /* ==========================================
-       4. MEDIA QUERIES (MOBILE-FIRST RESPONSIVE)
-       ========================================== */
     @media (max-width: 900px) {
-      body {
-        flex-direction: column;
-      }
-
-      .app-container {
-        flex-direction: column;
-        height: calc(100vh - 60px);
-      }
-
-      .sidebar {
-        width: 100%;
-        height: 100%;
-        display: none;
-      }
-
-      .sidebar.mobile-active {
-        display: flex;
-      }
-
-      .main-content {
-        padding: 1rem;
-      }
-
-      .main-content.mobile-hidden {
-        display: none;
-      }
-
-      .detail-panel {
-        width: 100%;
-        height: 100%;
-        border-left: none;
-        display: none;
-      }
-
-      .detail-panel.mobile-active {
-        display: flex;
-      }
-
-      .mobile-tab-bar {
-        display: flex;
-      }
+      body { flex-direction: column; }
+      .app-container { height: calc(100vh - 55px); }
+      .sidebar { width: 100%; height: 100%; display: none; }
+      .sidebar.mobile-active { display: flex; }
+      .main-content.mobile-hidden { display: none; }
+      .detail-panel { width: 100%; height: 100%; border-left: none; display: none; }
+      .detail-panel.mobile-active { display: flex; }
+      .mobile-tab-bar { display: flex; }
     }
   </style>
 </head>
 <body>
 
   <div class="app-container">
-    
-    <!-- SIDEBAR SINISTRA -->
     <aside class="sidebar" id="sidebar">
       <div class="brand">
-        <h1>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
-          Auto Scadenze
-        </h1>
-        <button class="theme-toggle" id="themeToggleBtn" title="Cambia tema">
-          <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        </button>
+        <h1>Auto Scadenze</h1>
+        <button class="btn btn-secondary btn-sm" id="btnSettings" title="Impostazioni GitHub" style="width: auto;">⚙️ Config</button>
+      </div>
+
+      <div class="sync-status">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncText">Sincronizzazione...</span>
       </div>
 
       <div class="car-list-container">
@@ -787,36 +236,19 @@
       </div>
 
       <div class="sidebar-actions">
-        <button class="btn btn-secondary" id="btnOpenAddCar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Nuova Auto
-        </button>
-        <div class="sync-actions">
-          <button class="btn btn-secondary btn-sm" id="btnExport" title="Esporta dati backup JSON" style="flex:1;">
-            Esporta JSON
-          </button>
-          <button class="btn btn-secondary btn-sm" id="btnImport" title="Importa dati da JSON" style="flex:1;">
-            Importa JSON
-          </button>
-        </div>
-        <input type="file" id="fileImport" accept=".json" style="display: none;">
+        <button class="btn btn-secondary" id="btnOpenAddCar">+ Nuova Auto</button>
       </div>
     </aside>
 
-    <!-- AREA CENTRALE (DASHBOARD) -->
     <main class="main-content" id="mainContent">
       <div class="dashboard-header">
         <div class="dashboard-title">
           <h2 id="dashboardCarTitle">Tutte le Auto</h2>
-          <p id="dashboardCarSubtitle">Panoramica generale delle scadenze e costi</p>
+          <p id="dashboardCarSubtitle">Panoramica generale</p>
         </div>
-        <button class="btn btn-primary" id="btnOpenAddExpiry" style="width: auto;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Nuova Scadenza
-        </button>
+        <button class="btn btn-primary" id="btnOpenAddExpiry" style="width: auto;">+ Nuova Scadenza</button>
       </div>
 
-      <!-- GRID KPI -->
       <div class="kpi-grid">
         <div class="kpi-card urgent">
           <div class="kpi-label">Entro 30 giorni</div>
@@ -826,83 +258,80 @@
           <div class="kpi-label">Spesa stimata (90 gg)</div>
           <div class="kpi-value" id="kpiCost90">0 €</div>
         </div>
-        <div class="kpi-card warning">
-          <div class="kpi-label">Alert Attivi</div>
-          <div class="kpi-value" id="kpiAlertCount">0</div>
-        </div>
       </div>
 
-      <!-- VISTA TIMELINE -->
       <div class="view-card">
-        <div class="view-card-header">
-          <div class="view-card-title">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Timeline Scadenze Puntuali (12 Mesi)
-          </div>
-        </div>
+        <div class="view-card-title">Timeline Scadenze (Anno In Corso)</div>
         <div class="timeline-container">
           <div class="timeline-months" id="timelineMonths"></div>
           <div class="timeline-track" id="timelineTrack"></div>
         </div>
-        <div class="legend" id="categoryLegend"></div>
       </div>
 
-      <!-- VISTA GANTT -->
       <div class="view-card">
-        <div class="view-card-header">
-          <div class="view-card-title">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            Coperture e Periodi di Validità (Gantt)
-          </div>
-        </div>
+        <div class="view-card-title">Coperture e Validià (Gantt)</div>
         <div class="gantt-container" id="ganttContainer"></div>
       </div>
     </main>
 
-    <!-- PANNELLO DESTRO (DETTAGLIO SELEZIONE) -->
     <aside class="detail-panel" id="detailPanel">
-      <div class="detail-header">
-        Dettaglio Scadenze
-      </div>
+      <div class="detail-header">Dettaglio Scadenze</div>
       <div class="detail-body">
         <div id="nextExpiryHighlight"></div>
         <div class="section-title">Elenco Completo</div>
         <div class="expiry-list" id="expiryList"></div>
       </div>
     </aside>
-
   </div>
 
-  <!-- TAB BAR MOBILE -->
   <nav class="mobile-tab-bar" id="mobileTabBar">
-    <button class="mobile-tab-item active" data-target="mainContent">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-      Dashboard
-    </button>
-    <button class="mobile-tab-item" data-target="sidebar">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
-      Auto
-    </button>
-    <button class="mobile-tab-item" data-target="detailPanel">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-      Dettagli
-    </button>
+    <button class="mobile-tab-item active" data-target="mainContent">Dashboard</button>
+    <button class="mobile-tab-item" data-target="sidebar">Auto</button>
+    <button class="mobile-tab-item" data-target="detailPanel">Dettagli</button>
   </nav>
 
-  <!-- MODALI -->
+  <!-- MODALE CONFIGURAZIONE GITHUB -->
+  <div class="modal-overlay" id="modalSettings">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Configurazione Sincronizzazione Cloud</h3>
+        <button class="btn-close closeModalBtn">&times;</button>
+      </div>
+      <form id="formSettings">
+        <div class="form-group">
+          <label>Username GitHub *</label>
+          <input type="text" id="ghUser" class="form-control" placeholder="es. mario-rossi" required>
+        </div>
+        <div class="form-group">
+          <label>Nome Repository *</label>
+          <input type="text" id="ghRepo" class="form-control" placeholder="es. auto-scadenze" required>
+        </div>
+        <div class="form-group">
+          <label>Personal Access Token (Fine-grained o Classic) *</label>
+          <input type="password" id="ghToken" class="form-control" placeholder="github_pat_..." required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary closeModalBtn">Chiudi</button>
+          <button type="submit" class="btn btn-primary">Salva & Connetti</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODALI AUTO E SCADENZE -->
   <div class="modal-overlay" id="modalCar">
     <div class="modal">
       <div class="modal-header">
-        <h3>Aggiungi Nuova Auto</h3>
+        <h3>Aggiungi Auto</h3>
         <button class="btn-close closeModalBtn">&times;</button>
       </div>
       <form id="formCar">
         <div class="form-group">
-          <label for="carName">Nome Modello *</label>
-          <input type="text" id="carName" class="form-control" placeholder="Es. Audi A4 Avant" required>
+          <label>Nome Modello *</label>
+          <input type="text" id="carName" class="form-control" placeholder="Es. Audi A4" required>
         </div>
         <div class="form-group">
-          <label for="carPlate">Targa *</label>
+          <label>Targa *</label>
           <input type="text" id="carPlate" class="form-control" placeholder="Es. AB123CD" required style="text-transform:uppercase;">
         </div>
         <div class="modal-footer">
@@ -921,15 +350,13 @@
       </div>
       <form id="formExpiry">
         <input type="hidden" id="expiryId">
-        
         <div class="form-group">
-          <label for="expiryCarId">Associa all'Auto *</label>
+          <label>Auto *</label>
           <select id="expiryCarId" class="form-control" required></select>
         </div>
-
         <div class="form-row">
           <div class="form-group">
-            <label for="expiryType">Tipo *</label>
+            <label>Tipo *</label>
             <select id="expiryType" class="form-control" required>
               <option value="bollo">Bollo</option>
               <option value="revisione">Revisione</option>
@@ -940,27 +367,24 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="expiryCost">Costo (€)</label>
-            <input type="number" step="0.01" id="expiryCost" class="form-control" placeholder="0.00">
+            <label>Costo (€)</label>
+            <input type="number" step="0.01" id="expiryCost" class="form-control">
           </div>
         </div>
-
         <div class="form-row">
           <div class="form-group">
-            <label for="expiryDate">Data / Scadenza *</label>
+            <label>Data Scadenza *</label>
             <input type="date" id="expiryDate" class="form-control" required>
           </div>
           <div class="form-group">
-            <label for="expiryEndDate">Data Fine (Opzionale)</label>
+            <label>Data Fine (Opzionale)</label>
             <input type="date" id="expiryEndDate" class="form-control">
           </div>
         </div>
-
         <div class="form-group">
-          <label for="expiryNotes">Note</label>
-          <textarea id="expiryNotes" class="form-control" rows="2" placeholder="Dettagli polizza, officina..."></textarea>
+          <label>Note</label>
+          <textarea id="expiryNotes" class="form-control" rows="2"></textarea>
         </div>
-
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary closeModalBtn">Annulla</button>
           <button type="submit" class="btn btn-primary">Salva</button>
@@ -969,116 +393,125 @@
     </div>
   </div>
 
-  <!-- LOGICA JAVASCRIPT -->
   <script>
     const CATEGORIES = {
       bollo: { label: 'Bollo', color: 'var(--cat-bollo)' },
       revisione: { label: 'Revisione', color: 'var(--cat-revisione)' },
-      assicurazione: { label: 'Assicurazione RC', color: 'var(--cat-assicurazione)' },
-      assistenza: { label: 'Assistenza Stradale', color: 'var(--cat-assistenza)' },
-      gomme: { label: 'Cambio Gomme', color: 'var(--cat-gomme)' },
+      assicurazione: { label: 'Assicurazione', color: 'var(--cat-assicurazione)' },
+      assistenza: { label: 'Assistenza', color: 'var(--cat-assistenza)' },
+      gomme: { label: 'Gomme', color: 'var(--cat-gomme)' },
       tagliando: { label: 'Tagliando', color: 'var(--cat-tagliando)' }
     };
 
-    const DEMO_DATA = [
-      {
-        id: 'car-1',
-        name: 'BMW X1 xDrive25e',
-        plate: 'GA789BC',
-        expiries: [
-          { id: 'exp-1', type: 'assicurazione', date: getRelativeDate(15), endDate: getRelativeDate(380), cost: 650, notes: 'Polizza Allianz con Kasko' },
-          { id: 'exp-2', type: 'bollo', date: getRelativeDate(45), endDate: '', cost: 280, notes: 'Regione Lombardia' },
-          { id: 'exp-3', type: 'revisione', date: getRelativeDate(120), endDate: '', cost: 79, notes: 'Centro Revisioni Autorizzato' }
-        ]
-      },
-      {
-        id: 'car-2',
-        name: 'Fiat 500e',
-        plate: 'GE123EF',
-        expiries: [
-          { id: 'exp-4', type: 'gomme', date: getRelativeDate(5), endDate: '', cost: 320, notes: 'Montaggio estive' },
-          { id: 'exp-5', type: 'assistenza', date: getRelativeDate(200), endDate: getRelativeDate(565), cost: 50, notes: 'Tessera ACI Gold' }
-        ]
-      }
-    ];
-
-    function getRelativeDate(daysFromNow) {
-      const d = new Date();
-      d.setDate(d.getDate() + daysFromNow);
-      return d.toISOString().split('T')[0];
-    }
-
     let cars = [];
     let selectedCarId = 'all';
-    let currentTheme = localStorage.getItem('auto_theme') || 'light';
+    let fileSha = ''; // Necessario per fare i commit tramite API di GitHub
+
+    let config = {
+      user: localStorage.getItem('gh_user') || '',
+      repo: localStorage.getItem('gh_repo') || '',
+      token: localStorage.getItem('gh_token') || ''
+    };
 
     document.addEventListener('DOMContentLoaded', () => {
-      initTheme();
-      loadData();
-      renderLegend();
-      renderApp();
       setupEventListeners();
+      if (!config.user || !config.repo || !config.token) {
+        openModal('modalSettings');
+        updateSyncStatus('error', 'Token/Repo non configurati');
+      } else {
+        fetchDataFromGitHub();
+      }
     });
 
-    function initTheme() {
-      if (currentTheme === 'dark' || (!localStorage.getItem('auto_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        currentTheme = 'dark';
-      } else {
-        document.documentElement.setAttribute('data-theme', 'light');
-        currentTheme = 'light';
+    function updateSyncStatus(type, text) {
+      const dot = document.getElementById('syncDot');
+      const label = document.getElementById('syncText');
+      dot.className = `sync-dot ${type}`;
+      label.innerText = text;
+    }
+
+    /* ==========================================
+       GITHUB API INTEGRATION (READ & WRITE)
+       ========================================== */
+    async function fetchDataFromGitHub() {
+      updateSyncStatus('syncing', 'Sincronizzazione in corso...');
+      const url = `https://api.github.com/repos/${config.user}/${config.repo}/contents/data.json`;
+
+      try {
+        const res = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${config.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+
+        if (!res.ok) throw new Error('Errore durante la lettura da GitHub');
+
+        const data = await res.json();
+        fileSha = data.sha;
+        const decodedContent = new TextDecoder().decode(Uint8Array.from(atob(data.content), c => c.charCodeAt(0)));
+        cars = JSON.parse(decodedContent);
+
+        updateSyncStatus('online', 'Sincronizzato con GitHub');
+        renderApp();
+      } catch (err) {
+        console.error(err);
+        updateSyncStatus('error', 'Errore di sincronizzazione');
       }
     }
 
-    function toggleTheme() {
-      currentTheme = currentTheme === 'light' ? 'dark' : 'light';
-      document.documentElement.setAttribute('data-theme', currentTheme);
-      localStorage.setItem('auto_theme', currentTheme);
-    }
+    async function saveDataToGitHub() {
+      updateSyncStatus('syncing', 'Salvataggio su cloud...');
+      const url = `https://api.github.com/repos/${config.user}/${config.repo}/contents/data.json`;
+      
+      const jsonString = JSON.stringify(cars, null, 2);
+      const encodedContent = btoa(unescape(encodeURIComponent(jsonString)));
 
-    function loadData() {
-      const stored = localStorage.getItem('auto_scadenze_data');
-      if (stored) {
-        try {
-          cars = JSON.parse(stored);
-        } catch (e) {
-          cars = DEMO_DATA;
-        }
-      } else {
-        cars = DEMO_DATA;
-        saveData();
+      const bodyData = {
+        message: 'Aggiornamento scadenze da Web App',
+        content: encodedContent,
+        sha: fileSha
+      };
+
+      try {
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${config.token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json'
+          },
+          body: JSON.stringify(bodyData)
+        });
+
+        if (!res.ok) throw new Error('Errore durante il salvataggio su GitHub');
+
+        const responseData = await res.json();
+        fileSha = responseData.content.sha;
+
+        updateSyncStatus('online', 'Sincronizzato con GitHub');
+        renderApp();
+      } catch (err) {
+        console.error(err);
+        alert('Impossibile salvare i dati su GitHub. Controlla il token o la connessione.');
+        updateSyncStatus('error', 'Errore salvataggio');
       }
     }
 
-    function saveData() {
-      localStorage.setItem('auto_scadenze_data', JSON.stringify(cars));
-      renderApp();
-    }
-
+    /* ==========================================
+       RENDER UI
+       ========================================== */
     function renderApp() {
       renderCarList();
       renderKPI();
       renderTimeline();
       renderGantt();
       renderDetailPanel();
-      updateHeaderTitle();
-    }
-
-    function renderLegend() {
-      const container = document.getElementById('categoryLegend');
-      container.innerHTML = Object.entries(CATEGORIES).map(([key, cat]) => `
-        <div class="legend-item">
-          <span class="cat-dot" style="background-color: ${cat.color}"></span>
-          <span>${cat.label}</span>
-        </div>
-      `).join('');
     }
 
     function renderCarList() {
       const carListEl = document.getElementById('carList');
-      const carCountBadge = document.getElementById('carCountBadge');
-      
-      carCountBadge.innerText = cars.length;
+      document.getElementById('carCountBadge').innerText = cars.length;
 
       let html = `
         <div class="car-item ${selectedCarId === 'all' ? 'active' : ''}" onclick="selectCar('all')">
@@ -1095,9 +528,7 @@
             <div class="car-name">${escapeHtml(car.name)}</div>
             <div class="car-plate">${escapeHtml(car.plate)}</div>
           </div>
-          <button class="btn-delete-car" onclick="event.stopPropagation(); deleteCar('${car.id}')" title="Elimina auto">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          </button>
+          <button class="btn-delete-car" onclick="event.stopPropagation(); deleteCar('${car.id}')">🗑️</button>
         </div>
       `).join('');
 
@@ -1109,59 +540,35 @@
       renderApp();
     }
 
-    function updateHeaderTitle() {
-      const titleEl = document.getElementById('dashboardCarTitle');
-      const subEl = document.getElementById('dashboardCarSubtitle');
-
-      if (selectedCarId === 'all') {
-        titleEl.innerText = 'Tutte le Auto';
-        subEl.innerText = 'Panoramica generale delle scadenze e costi';
-      } else {
-        const car = cars.find(c => c.id === selectedCarId);
-        if (car) {
-          titleEl.innerText = car.name;
-          subEl.innerText = `Targa: ${car.plate}`;
-        }
-      }
-    }
-
     function renderKPI() {
-      const allExpiries = getAllExpiriesFiltered();
+      const expiries = getAllExpiriesFiltered();
       const now = new Date();
       now.setHours(0,0,0,0);
 
-      let urgentCount = 0;
+      let urgent = 0;
       let cost90 = 0;
-      let alertCount = 0;
 
-      allExpiries.forEach(exp => {
-        const expDate = new Date(exp.date);
-        const diffDays = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
-
-        if (diffDays >= 0 && diffDays <= 30) urgentCount++;
+      expiries.forEach(exp => {
+        const diffDays = Math.ceil((new Date(exp.date) - now) / (1000 * 60 * 60 * 24));
+        if (diffDays >= 0 && diffDays <= 30) urgent++;
         if (diffDays >= 0 && diffDays <= 90) cost90 += Number(exp.cost) || 0;
-        if (diffDays >= 0 && diffDays <= 30) alertCount++;
       });
 
-      document.getElementById('kpiUrgentCount').innerText = urgentCount;
-      document.getElementById('kpiCost90').innerText = `${cost90.toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} €`;
-      document.getElementById('kpiAlertCount').innerText = alertCount;
+      document.getElementById('kpiUrgentCount').innerText = urgent;
+      document.getElementById('kpiCost90').innerText = `${cost90} €`;
     }
 
     function renderTimeline() {
       const monthsContainer = document.getElementById('timelineMonths');
       const trackContainer = document.getElementById('timelineTrack');
-
       const now = new Date();
       const currentYear = now.getFullYear();
       const monthsNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giun', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
 
       monthsContainer.innerHTML = monthsNames.map(m => `<div class="month-col">${m}</div>`).join('');
-
-      const expiries = getAllExpiriesFiltered();
       trackContainer.innerHTML = '';
 
-      expiries.forEach(exp => {
+      getAllExpiriesFiltered().forEach(exp => {
         const d = new Date(exp.date);
         if (d.getFullYear() === currentYear) {
           const startOfYear = new Date(currentYear, 0, 1);
@@ -1174,9 +581,6 @@
           marker.style.left = `${Math.min(Math.max(posPercent, 2), 98)}%`;
           marker.style.backgroundColor = catConfig.color;
           marker.innerText = d.getDate();
-          marker.title = `${exp.carName} - ${catConfig.label}: ${formatDate(exp.date)}`;
-          marker.onclick = () => highlightExpiry(exp.id);
-
           trackContainer.appendChild(marker);
         }
       });
@@ -1187,106 +591,30 @@
       const expiries = getAllExpiriesFiltered().filter(e => e.endDate);
 
       if (expiries.length === 0) {
-        container.innerHTML = `<div class="empty-state">Nessuna copertura o periodo di validità registrato per la selezione corrente.</div>`;
+        container.innerHTML = `<div style="font-size:0.8rem; color:var(--text-muted);">Nessuna copertura inserita.</div>`;
         return;
       }
 
-      const now = new Date();
-      const currentYear = now.getFullYear();
+      const currentYear = new Date().getFullYear();
       const startOfYear = new Date(currentYear, 0, 1);
       const endOfYear = new Date(currentYear, 11, 31);
 
-      let html = '';
-
-      expiries.forEach(exp => {
+      container.innerHTML = expiries.map(exp => {
         const start = new Date(exp.date);
         const end = new Date(exp.endDate);
 
-        let startPct = ((start - startOfYear) / (endOfYear - startOfYear)) * 100;
-        let endPct = ((end - startOfYear) / (endOfYear - startOfYear)) * 100;
-
-        startPct = Math.max(0, Math.min(100, startPct));
-        endPct = Math.max(0, Math.min(100, endPct));
+        let startPct = Math.max(0, Math.min(100, ((start - startOfYear) / (endOfYear - startOfYear)) * 100));
+        let endPct = Math.max(0, Math.min(100, ((end - startOfYear) / (endOfYear - startOfYear)) * 100));
         let widthPct = Math.max(2, endPct - startPct);
 
         const catConfig = CATEGORIES[exp.type] || { color: 'var(--accent)' };
 
-        html += `
-          <div class="gantt-row">
-            <div class="gantt-label" title="${escapeHtml(exp.carName)}">${escapeHtml(exp.carName)}</div>
-            <div class="gantt-track-bg">
-              <div class="gantt-bar" style="left: ${startPct}%; width: ${widthPct}%; background-color: ${catConfig.color};" onclick="highlightExpiry('${exp.id}')">
-                ${catConfig.label}
-              </div>
-            </div>
-          </div>
-        `;
-      });
-
-      container.innerHTML = html;
-    }
-
-    function renderDetailPanel() {
-      const expiries = getAllExpiriesFiltered();
-      expiries.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-      const highlightEl = document.getElementById('nextExpiryHighlight');
-      const listEl = document.getElementById('expiryList');
-
-      const now = new Date();
-      now.setHours(0,0,0,0);
-      const nextExp = expiries.find(e => new Date(e.date) >= now);
-
-      if (nextExp) {
-        const catConfig = CATEGORIES[nextExp.type];
-        const status = getExpiryStatus(nextExp.date);
-
-        highlightEl.innerHTML = `
-          <div class="section-title">Prossima in Arrivo</div>
-          <div class="expiry-item active" style="border-left: 4px solid ${catConfig.color}">
-            <div class="expiry-header">
-              <div class="expiry-title">
-                <span class="cat-dot" style="background-color: ${catConfig.color}"></span>
-                ${catConfig.label}
-              </div>
-              <span class="badge ${status.badgeClass}">${status.text}</span>
-            </div>
-            <div class="expiry-dates">Auto: <strong>${escapeHtml(nextExp.carName)}</strong></div>
-            <div class="expiry-dates">Scadenza: ${formatDate(nextExp.date)}</div>
-            <div class="expiry-footer">
-              <span class="expiry-cost">${nextExp.cost ? nextExp.cost + ' €' : '-'}</span>
-              <button class="btn btn-secondary btn-sm" onclick="openEditExpiry('${nextExp.id}')">Modifica</button>
-            </div>
-          </div>
-        `;
-      } else {
-        highlightEl.innerHTML = `<div class="empty-state">Nessuna scadenza imminente</div>`;
-      }
-
-      if (expiries.length === 0) {
-        listEl.innerHTML = `<div class="empty-state">Nessuna scadenza trovata.</div>`;
-        return;
-      }
-
-      listEl.innerHTML = expiries.map(exp => {
-        const catConfig = CATEGORIES[exp.type];
-        const status = getExpiryStatus(exp.date);
-
         return `
-          <div class="expiry-item" id="card-exp-${exp.id}" onclick="openEditExpiry('${exp.id}')">
-            <div class="expiry-header">
-              <div class="expiry-title">
-                <span class="cat-dot" style="background-color: ${catConfig.color}"></span>
+          <div class="gantt-row">
+            <div class="gantt-label">${escapeHtml(exp.carName)}</div>
+            <div class="gantt-track-bg">
+              <div class="gantt-bar" style="left: ${startPct}%; width: ${widthPct}%; background-color: ${catConfig.color};">
                 ${catConfig.label}
-              </div>
-              <span class="badge ${status.badgeClass}">${status.text}</span>
-            </div>
-            <div class="expiry-dates">${escapeHtml(exp.carName)} (${escapeHtml(exp.carPlate)})</div>
-            <div class="expiry-dates">Data: ${formatDate(exp.date)} ${exp.endDate ? '→ ' + formatDate(exp.endDate) : ''}</div>
-            <div class="expiry-footer">
-              <span class="expiry-cost">${exp.cost ? exp.cost + ' €' : ''}</span>
-              <div>
-                <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteExpiry('${exp.id}')">Elimina</button>
               </div>
             </div>
           </div>
@@ -1294,20 +622,53 @@
       }).join('');
     }
 
-    function getExpiryStatus(dateStr) {
-      const now = new Date();
-      now.setHours(0,0,0,0);
-      const expDate = new Date(dateStr);
-      const diffDays = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
+    function renderDetailPanel() {
+      const expiries = getAllExpiriesFiltered();
+      expiries.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-      if (diffDays < 0) {
-        return { text: 'Scaduta', badgeClass: 'badge-urgente' };
-      } else if (diffDays <= 7) {
-        return { text: `Urgente (${diffDays} gg)`, badgeClass: 'badge-urgente' };
-      } else if (diffDays <= 30) {
-        return { text: `In arrivo (${diffDays} gg)`, badgeClass: 'badge-inarrivo' };
-      } else {
-        return { text: 'Regolare', badgeClass: 'badge-ok' };
+      const listEl = document.getElementById('expiryList');
+
+      if (expiries.length === 0) {
+        listEl.innerHTML = `<div style="font-size:0.8rem; color:var(--text-muted);">Nessuna scadenza inserita.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = expiries.map(exp => {
+        const catConfig = CATEGORIES[exp.type];
+        return `
+          <div class="expiry-item" onclick="openEditExpiry('${exp.id}')">
+            <div class="expiry-header">
+              <div class="expiry-title">
+                <span class="cat-dot" style="background-color: ${catConfig.color}"></span>
+                ${catConfig.label}
+              </div>
+            </div>
+            <div class="expiry-dates">${escapeHtml(exp.carName)} (${escapeHtml(exp.carPlate)})</div>
+            <div class="expiry-dates">Data: ${formatDate(exp.date)} ${exp.endDate ? '→ ' + formatDate(exp.endDate) : ''}</div>
+            <div class="expiry-footer">
+              <span class="expiry-cost">${exp.cost ? exp.cost + ' €' : ''}</span>
+              <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteExpiry('${exp.id}')">Elimina</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* ==========================================
+       AZIONI
+       ========================================== */
+    function deleteCar(id) {
+      if (confirm('Eliminare questa auto e le relative scadenze?')) {
+        cars = cars.filter(c => c.id !== id);
+        if (selectedCarId === id) selectedCarId = 'all';
+        saveDataToGitHub();
+      }
+    }
+
+    function deleteExpiry(expId) {
+      if (confirm('Eliminare questa scadenza?')) {
+        cars.forEach(car => car.expiries = car.expiries.filter(e => e.id !== expId));
+        saveDataToGitHub();
       }
     }
 
@@ -1316,33 +677,11 @@
       cars.forEach(car => {
         if (selectedCarId === 'all' || selectedCarId === car.id) {
           car.expiries.forEach(exp => {
-            list.push({
-              ...exp,
-              carId: car.id,
-              carName: car.name,
-              carPlate: car.plate
-            });
+            list.push({ ...exp, carId: car.id, carName: car.name, carPlate: car.plate });
           });
         }
       });
       return list;
-    }
-
-    function deleteCar(id) {
-      if (confirm('Sei sicuro di voler eliminare questa auto e tutte le sue scadenze?')) {
-        cars = cars.filter(c => c.id !== id);
-        if (selectedCarId === id) selectedCarId = 'all';
-        saveData();
-      }
-    }
-
-    function deleteExpiry(expId) {
-      if (confirm('Eliminare questa scadenza?')) {
-        cars.forEach(car => {
-          car.expiries = car.expiries.filter(e => e.id !== expId);
-        });
-        saveData();
-      }
     }
 
     function openEditExpiry(expId) {
@@ -1351,10 +690,7 @@
 
       cars.forEach(car => {
         const e = car.expiries.find(x => x.id === expId);
-        if (e) {
-          foundExp = e;
-          foundCarId = car.id;
-        }
+        if (e) { foundExp = e; foundCarId = car.id; }
       });
 
       if (!foundExp) return;
@@ -1372,65 +708,36 @@
       openModal('modalExpiry');
     }
 
-    function highlightExpiry(expId) {
-      const el = document.getElementById(`card-exp-${expId}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        el.style.borderColor = 'var(--accent)';
-        setTimeout(() => el.style.borderColor = '', 2000);
-      }
-    }
-
     function populateCarSelect(defaultCarId) {
       const select = document.getElementById('expiryCarId');
       select.innerHTML = cars.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${escapeHtml(c.plate)})</option>`).join('');
       if (defaultCarId) select.value = defaultCarId;
-      else if (selectedCarId !== 'all') select.value = selectedCarId;
     }
 
-    function openModal(modalId) {
-      document.getElementById(modalId).classList.add('open');
-    }
-
-    function closeModal(modalId) {
-      document.getElementById(modalId).classList.remove('open');
-    }
-
-    /* ESPORTAZIONE E IMPORTAZIONE BACKUP JSON */
-    function exportData() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cars, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `auto_scadenze_backup_${new Date().toISOString().split('T')[0]}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-    }
-
-    function importData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const importedCars = JSON.parse(e.target.result);
-          if (Array.isArray(importedCars)) {
-            cars = importedCars;
-            saveData();
-            alert('Dati importati con successo!');
-          } else {
-            alert('Formato file non valido.');
-          }
-        } catch (err) {
-          alert('Errore durante l\'importazione del file JSON.');
-        }
-      };
-      reader.readAsText(file);
-    }
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
     function setupEventListeners() {
-      document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+      document.getElementById('btnSettings').addEventListener('click', () => {
+        document.getElementById('ghUser').value = config.user;
+        document.getElementById('ghRepo').value = config.repo;
+        document.getElementById('ghToken').value = config.token;
+        openModal('modalSettings');
+      });
+
+      document.getElementById('formSettings').addEventListener('submit', (e) => {
+        e.preventDefault();
+        config.user = document.getElementById('ghUser').value.trim();
+        config.repo = document.getElementById('ghRepo').value.trim();
+        config.token = document.getElementById('ghToken').value.trim();
+
+        localStorage.setItem('gh_user', config.user);
+        localStorage.setItem('gh_repo', config.repo);
+        localStorage.setItem('gh_token', config.token);
+
+        closeModal('modalSettings');
+        fetchDataFromGitHub();
+      });
 
       document.getElementById('btnOpenAddCar').addEventListener('click', () => {
         document.getElementById('formCar').reset();
@@ -1438,26 +745,18 @@
       });
 
       document.getElementById('btnOpenAddExpiry').addEventListener('click', () => {
-        if (cars.length === 0) {
-          alert('Aggiungi prima un\'auto per creare una scadenza.');
-          return;
-        }
+        if (cars.length === 0) return alert('Aggiungi prima un\'auto.');
         document.getElementById('formExpiry').reset();
         document.getElementById('expiryId').value = '';
-        document.getElementById('modalExpiryTitle').innerText = 'Nuova Scadenza';
         populateCarSelect();
         openModal('modalExpiry');
       });
 
-      // Gestione Export / Import
-      document.getElementById('btnExport').addEventListener('click', exportData);
-      document.getElementById('btnImport').addEventListener('click', () => document.getElementById('fileImport').click());
-      document.getElementById('fileImport').addEventListener('change', importData);
-
-      document.querySelectorAll('.closeModalBtn').forEach(btn => {
-        btn.addEventListener('click', () => {
+      document.querySelectorAll('.closeModalBtn').forEach(b => {
+        b.addEventListener('click', () => {
           closeModal('modalCar');
           closeModal('modalExpiry');
+          closeModal('modalSettings');
         });
       });
 
@@ -1467,10 +766,8 @@
         const plate = document.getElementById('carPlate').value.trim().toUpperCase();
 
         if (name && plate) {
-          const newCar = { id: 'car-' + Date.now(), name, plate, expiries: [] };
-          cars.push(newCar);
-          selectedCarId = newCar.id;
-          saveData();
+          cars.push({ id: 'car-' + Date.now(), name, plate, expiries: [] });
+          saveDataToGitHub();
           closeModal('modalCar');
         }
       });
@@ -1486,19 +783,15 @@
         const notes = document.getElementById('expiryNotes').value.trim();
 
         if (expId) {
-          cars.forEach(car => { car.expiries = car.expiries.filter(x => x.id !== expId); });
-          const targetCar = cars.find(c => c.id === carId);
-          if (targetCar) {
-            targetCar.expiries.push({ id: expId, type, cost, date, endDate, notes });
-          }
-        } else {
-          const targetCar = cars.find(c => c.id === carId);
-          if (targetCar) {
-            targetCar.expiries.push({ id: 'exp-' + Date.now(), type, cost, date, endDate, notes });
-          }
+          cars.forEach(car => car.expiries = car.expiries.filter(x => x.id !== expId));
         }
 
-        saveData();
+        const targetCar = cars.find(c => c.id === carId);
+        if (targetCar) {
+          targetCar.expiries.push({ id: expId || 'exp-' + Date.now(), type, cost, date, endDate, notes });
+        }
+
+        saveDataToGitHub();
         closeModal('modalExpiry');
       });
 
@@ -1508,33 +801,25 @@
           btn.classList.add('active');
 
           const target = btn.getAttribute('data-target');
-          
           document.getElementById('sidebar').classList.remove('mobile-active');
           document.getElementById('mainContent').classList.add('mobile-hidden');
           document.getElementById('detailPanel').classList.remove('mobile-active');
 
-          if (target === 'sidebar') {
-            document.getElementById('sidebar').classList.add('mobile-active');
-          } else if (target === 'mainContent') {
-            document.getElementById('mainContent').classList.remove('mobile-hidden');
-          } else if (target === 'detailPanel') {
-            document.getElementById('detailPanel').classList.add('mobile-active');
-          }
+          if (target === 'sidebar') document.getElementById('sidebar').classList.add('mobile-active');
+          else if (target === 'mainContent') document.getElementById('mainContent').classList.remove('mobile-hidden');
+          else if (target === 'detailPanel') document.getElementById('detailPanel').classList.add('mobile-active');
         });
       });
     }
 
-    function formatDate(dateStr) {
-      if (!dateStr) return '';
-      const parts = dateStr.split('-');
-      if (parts.length !== 3) return dateStr;
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    function formatDate(d) {
+      if (!d) return '';
+      const p = d.split('-');
+      return `${p[2]}/${p[1]}/${p[0]}`;
     }
 
     function escapeHtml(str) {
-      return str.replace(/[&<>"']/g, function(m) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-      });
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
     }
   </script>
 </body>
