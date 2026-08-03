@@ -239,7 +239,7 @@
     .coverage-header-main { display: flex; flex-direction: column; gap: 0.25rem; }
     .coverage-version { font-size: 0.7rem; color: var(--text-muted); font-weight: 500; }
     .coverage-year-actions { display: inline-flex; gap: 0.35rem; flex-shrink: 0; }
-    .coverage-scroll { overflow-x: auto; padding-bottom: 0.25rem; }
+    .coverage-scroll { overflow-x: hidden; padding-bottom: 0.25rem; width: 100%; }
     .coverage-months {
       display: grid;
       grid-template-columns: repeat(12, 1fr);
@@ -387,11 +387,11 @@
 
 /* Vista compatta: mesi e barre allineati sulla stessa griglia */
 .compact-month-header{
-  min-width: 880px;
+  width: 100%; min-width: 0;
   margin-bottom: 0;
 }
 .compact-list{
-  min-width: 880px;
+  width: 100%; min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -399,10 +399,10 @@
 .compact-header,
 .compact-row{
   display: grid;
-  grid-template-columns: 165px minmax(520px, 1fr) 48px;
+  grid-template-columns: 210px minmax(0, 1fr) 48px;
   gap: 10px;
   align-items: center;
-  min-width: 880px;
+  width: 100%; min-width: 0;
 }
 .compact-header{
   padding: 0 0 8px;
@@ -435,8 +435,9 @@
 }
 .compact-timeline-head{
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   width: 100%;
+  min-width: 0;
   text-align: center;
 }
 .compact-timeline-head span{
@@ -475,12 +476,21 @@
   box-shadow: 0 0 0 2px var(--bg-secondary);
 }
 @media (max-width: 900px){
-  .compact-month-header,.compact-list,.compact-header,.compact-row{min-width:760px;}
+  .coverage-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  .compact-month-header,.compact-list,.compact-header,.compact-row{min-width:760px;width:auto;}
   .compact-header,.compact-row{grid-template-columns:125px 1fr 40px;gap:8px;}
   .compact-row{height:30px;}
   .compact-name{font-size:11.5px;}
   .compact-days{font-size:11px;}
   .compact-timeline-head span{font-size:10px;}
+}
+
+
+/* Desktop: niente scrollbar orizzontale nella vista compatta */
+@media (min-width: 901px){
+  .coverage-scroll{overflow-x:hidden;}
+  .compact-month-header,.compact-list,.compact-header,.compact-row{width:100%;min-width:0;}
+  .compact-header,.compact-row{grid-template-columns:210px minmax(0,1fr) 48px;}
 }
 
 </style>
@@ -535,7 +545,7 @@
         <div class="coverage-header">
           <div class="coverage-header-main">
             <div class="view-card-title" style="margin-bottom:0;">Coperture e Scadenze <span id="coverageYearLabel"></span></div>
-            <div class="coverage-version" id="appVersionInline">Versione v2026.08.03-1601</div>
+            <div class="coverage-version" id="appVersionInline">Versione v2026.08.03-1602</div>
           </div>
           <div class="coverage-year-actions">
             <button type="button" class="btn btn-secondary btn-sm" onclick="changeYear(-1)" style="width:auto;">‹</button>
@@ -567,7 +577,7 @@
     <button class="mobile-tab-item" data-target="detailPanel">Dettagli</button>
   </nav>
 
-  <div id="debugVersion" class="debug-version">v2026.08.03-1601</div>
+  <div id="debugVersion" class="debug-version">v2026.08.03-1602</div>
 
   <!-- MODALE CONFIGURAZIONE GITHUB -->
   <div class="modal-overlay" id="modalSettings">
@@ -673,7 +683,7 @@
   </div>
 
   <script>
-    const APP_VERSION = 'v2026.08.03-1601';
+    const APP_VERSION = 'v2026.08.03-1602';
     const CATEGORIES = {
       bollo: { label: 'Bollo', color: 'var(--cat-bollo)' },
       revisione: { label: 'Revisione', color: 'var(--cat-revisione)' },
