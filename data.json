@@ -61,14 +61,6 @@
     "plate": "DV310NF",
     "expiries": [
       {
-        "id": "exp-1785754976404",
-        "type": "tagliando",
-        "cost": 200,
-        "date": "2026-10-31",
-        "endDate": "",
-        "notes": ""
-      },
-      {
         "id": "exp-1785752516247",
         "type": "assicurazione",
         "cost": 212,
