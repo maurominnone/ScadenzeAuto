@@ -78,14 +78,6 @@
     "archived": false,
     "expiries": [
       {
-        "id": "exp-1785769625191",
-        "type": "bollo",
-        "cost": 28,
-        "date": "2026-08-25",
-        "endDate": "",
-        "notes": ""
-      },
-      {
         "id": "exp-1785771277555",
         "type": "assicurazione",
         "cost": 243,
