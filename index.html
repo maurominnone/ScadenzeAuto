@@ -261,7 +261,7 @@
       </div>
 
       <div class="view-card">
-        <div class="view-card-title">Timeline Scadenze (Anno In Corso)</div>
+        <div class="view-card-title">Timeline Scadenze (<span id="timelineYearLabel"></span>)<div style="display:inline-flex;gap:0.3rem;margin-left:0.5rem;"><button type="button" class="btn btn-secondary btn-sm" onclick="changeYear(-1)" style="width:auto;">‹</button><button type="button" class="btn btn-secondary btn-sm" onclick="changeYear(1)" style="width:auto;">›</button></div></div>
         <div class="timeline-container">
           <div class="timeline-months" id="timelineMonths"></div>
           <div class="timeline-track" id="timelineTrack"></div>
@@ -269,7 +269,7 @@
       </div>
 
       <div class="view-card">
-        <div class="view-card-title">Coperture e Validià (Gantt)</div>
+        <div class="view-card-title">Coperture e Validià (Gantt) - <span id="ganttYearLabel"></span><div style="display:inline-flex;gap:0.3rem;margin-left:0.5rem;"><button type="button" class="btn btn-secondary btn-sm" onclick="changeYear(-1)" style="width:auto;">‹</button><button type="button" class="btn btn-secondary btn-sm" onclick="changeYear(1)" style="width:auto;">›</button></div></div>
         <div class="gantt-container" id="ganttContainer"></div>
       </div>
     </main>
@@ -405,7 +405,7 @@
 
     let cars = [];
     let selectedCarId = 'all';
-    let fileSha = ''; // Necessario per fare i commit tramite API di GitHub
+    let fileSha = ''; // Necessario per fare i commit tramite API di GitHub     let currentYear = new Date().getFullYear();     function changeYear(delta) { currentYear += delta; renderTimeline(); renderGantt(); }
 
     let config = {
       user: localStorage.getItem('gh_user') || '',
@@ -562,7 +562,7 @@
       const monthsContainer = document.getElementById('timelineMonths');
       const trackContainer = document.getElementById('timelineTrack');
       const now = new Date();
-      const currentYear = now.getFullYear();
+      document.getElementById('timelineYearLabel').innerText = currentYear; const monthsNames
       const monthsNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giun', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
 
       monthsContainer.innerHTML = monthsNames.map(m => `<div class="month-col">${m}</div>`).join('');
