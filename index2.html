@@ -384,13 +384,104 @@
       .mobile-tab-bar { display: flex; }
     }
   
-.compact-header{display:grid;grid-template-columns:220px 1fr 60px;gap:10px;padding:0 0 8px;border-bottom:1px solid var(--border-color);font-size:11px;color:var(--text-muted);font-weight:700;min-width:900px;}
-.compact-row{display:grid;grid-template-columns:220px 1fr 60px;gap:10px;align-items:center;height:34px;min-width:900px;border-bottom:1px solid var(--border-color);cursor:pointer;}
-.compact-name{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap}
-.compact-days{text-align:right;font-size:12px;font-weight:700;color:var(--text-muted)}
-.compact-track{position:relative;height:10px;background:var(--bg-tertiary);border-radius:999px}
-.compact-bar{position:absolute;height:10px;border-radius:999px;top:0}
-.compact-point{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;transform:translate(-50%,-50%)}
+
+/* Vista compatta: mesi e barre allineati sulla stessa griglia */
+.compact-month-header{
+  min-width: 880px;
+  margin-bottom: 0;
+}
+.compact-list{
+  min-width: 880px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.compact-header,
+.compact-row{
+  display: grid;
+  grid-template-columns: 165px minmax(520px, 1fr) 48px;
+  gap: 10px;
+  align-items: center;
+  min-width: 880px;
+}
+.compact-header{
+  padding: 0 0 8px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+.compact-row{
+  height: 32px;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+}
+.compact-row:hover{ background: var(--bg-primary); }
+.compact-name{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.compact-days{
+  text-align: right;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.compact-timeline-head{
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  width: 100%;
+  text-align: center;
+}
+.compact-timeline-head span{
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  border-left: 1px solid transparent;
+}
+.compact-track{
+  position: relative;
+  height: 12px;
+  border-radius: 999px;
+  overflow: visible;
+  background-color: var(--bg-tertiary);
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(100% / 12 - 1px),
+    rgba(100,116,139,0.20) calc(100% / 12 - 1px),
+    rgba(100,116,139,0.20) calc(100% / 12)
+  );
+}
+.compact-bar{
+  position: absolute;
+  height: 12px;
+  border-radius: 999px;
+  top: 0;
+}
+.compact-point{
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transform: translate(-50%,-50%);
+  box-shadow: 0 0 0 2px var(--bg-secondary);
+}
+@media (max-width: 900px){
+  .compact-month-header,.compact-list,.compact-header,.compact-row{min-width:760px;}
+  .compact-header,.compact-row{grid-template-columns:125px 1fr 40px;gap:8px;}
+  .compact-row{height:30px;}
+  .compact-name{font-size:11.5px;}
+  .compact-days{font-size:11px;}
+  .compact-timeline-head span{font-size:10px;}
+}
 
 </style>
 </head>
@@ -444,7 +535,7 @@
         <div class="coverage-header">
           <div class="coverage-header-main">
             <div class="view-card-title" style="margin-bottom:0;">Coperture e Scadenze <span id="coverageYearLabel"></span></div>
-            <div class="coverage-version" id="appVersionInline">Versione v2026.08.03-1600</div>
+            <div class="coverage-version" id="appVersionInline">Versione v2026.08.03-1601</div>
           </div>
           <div class="coverage-year-actions">
             <button type="button" class="btn btn-secondary btn-sm" onclick="changeYear(-1)" style="width:auto;">‹</button>
@@ -476,7 +567,7 @@
     <button class="mobile-tab-item" data-target="detailPanel">Dettagli</button>
   </nav>
 
-  <div id="debugVersion" class="debug-version">v2026.08.03-1600</div>
+  <div id="debugVersion" class="debug-version">v2026.08.03-1601</div>
 
   <!-- MODALE CONFIGURAZIONE GITHUB -->
   <div class="modal-overlay" id="modalSettings">
@@ -582,7 +673,7 @@
   </div>
 
   <script>
-    const APP_VERSION = 'v2026.08.03-1600';
+    const APP_VERSION = 'v2026.08.03-1601';
     const CATEGORIES = {
       bollo: { label: 'Bollo', color: 'var(--cat-bollo)' },
       revisione: { label: 'Revisione', color: 'var(--cat-revisione)' },
@@ -763,23 +854,40 @@
  const months=document.getElementById("coverageMonths");
  if(!ym||!list||!months) return;
  ym.innerText=currentYear;
- months.innerHTML='';
- const labels=['Tipo / Auto','Timeline annuale','GG'];
- list.innerHTML='';
+ months.className='compact-month-header';
+ list.className='compact-list';
+ const monthNames=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+ months.innerHTML=`<div class="compact-header"><div>Tipo / Auto</div><div class="compact-timeline-head">${monthNames.map(m=>`<span>${m}</span>`).join('')}</div><div>GG</div></div>`;
  const y0=new Date(currentYear,0,1);
  const y1=new Date(currentYear,11,31,23,59,59);
- months.innerHTML=`<div class="compact-header"><div>${labels[0]}</div><div>Gen Feb Mar Apr Mag Giu Lug Ago Set Ott Nov Dic</div><div>${labels[2]}</div></div>`;
  const DAY=86400000;
- const rows=getAllExpiriesFiltered().map(exp=>{const s=new Date(exp.date);const e=exp.endDate?new Date(exp.endDate):s;return {exp,s,e,period:!!exp.endDate};}).filter(r=>r.period?(r.e>=y0&&r.s<=y1):(r.s.getFullYear()===currentYear)).sort((a,b)=>a.s-b.s);
- const range=(d)=>Math.min(98,Math.max(1,((d-y0)/(y1-y0))*100));
+ const today=new Date();
+ today.setHours(0,0,0,0);
+ const pct=(d)=>Math.min(98,Math.max(1,((d-y0)/(y1-y0))*100));
+ const rows=getAllExpiriesFiltered()
+   .map(exp=>{const s=new Date(exp.date);const e=exp.endDate?new Date(exp.endDate):s;return {exp,s,e,period:!!exp.endDate};})
+   .filter(r=>r.period?(r.e>=y0&&r.s<=y1):(r.s.getFullYear()===currentYear))
+   .sort((a,b)=>a.s-b.s||(a.e-b.e));
+ if(rows.length===0){list.innerHTML=`<div class="coverage-empty">Nessuna copertura o scadenza nel ${currentYear}.</div>`;return;}
  let html='';
  rows.forEach(r=>{
- const c=CATEGORIES[r.exp.type]||{label:r.exp.type,color:'var(--accent)'};
- const days=Math.ceil((r.e-new Date())/DAY);
- let visual='';
- if(r.period){const l=range(r.s<y0?y0:r.s);const rr=range(r.e>y1?y1:r.e);visual=`<div class="compact-track"><div class="compact-bar" style="left:${l}%;width:${Math.max(2,rr-l)}%;background:${c.color}"></div>${r.e<=y1?`<div class="compact-point" style="left:${rr}%;background:${c.color}"></div>`:''}</div>`;}
- else{const p=range(r.s);visual=`<div class="compact-track"><div class="compact-point" style="left:${p}%;background:${c.color}"></div></div>`;}
- html+=`<div class="compact-row" onclick="openEditExpiry('${r.exp.id}')"><div class="compact-name"><span class="cat-dot" style="background:${c.color}"></span>${c.label} · ${r.exp.carName}</div><div>${visual}</div><div class="compact-days">${days}</div></div>`;
+   const c=CATEGORIES[r.exp.type]||{label:r.exp.type||'Scadenza',color:'var(--accent)'};
+   const days=Math.ceil((r.e-today)/DAY);
+   const daysLabel=days<0?`${Math.abs(days)} scad.`:`${days}`;
+   let visual='';
+   if(r.period){
+     const start=r.s<y0?y0:r.s;
+     const end=r.e>y1?y1:r.e;
+     const l=pct(start);
+     const rr=pct(end);
+     const w=Math.max(2,rr-l);
+     visual=`<div class="compact-track"><div class="compact-bar" style="left:${l}%;width:${w}%;background:${c.color}"></div>${r.e<=y1?`<div class="compact-point" style="left:${rr}%;background:${c.color}"></div>`:''}</div>`;
+   }else{
+     const p=pct(r.s);
+     visual=`<div class="compact-track"><div class="compact-point" style="left:${p}%;background:${c.color}"></div></div>`;
+   }
+   const carLabel=(r.exp.carName||'').replace(/^Auto\s*/i,'');
+   html+=`<div class="compact-row" onclick="openEditExpiry('${r.exp.id}')" title="${c.label} - ${r.exp.carName} ${r.exp.endDate?formatDate(r.exp.date)+' → '+formatDate(r.exp.endDate):formatDate(r.exp.date)}"><div class="compact-name"><span class="cat-dot" style="background:${c.color}"></span>${c.label} · ${escapeHtml(carLabel)}</div><div>${visual}</div><div class="compact-days">${daysLabel}</div></div>`;
  });
  list.innerHTML=html;
 }
