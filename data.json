@@ -100,6 +100,15 @@
     "name": "Fiat Panda",
     "plate": "AB111AB",
     "archived": false,
-    "expiries": []
+    "expiries": [
+      {
+        "id": "exp-1785769625191",
+        "type": "bollo",
+        "cost": 28,
+        "date": "2026-08-25",
+        "endDate": "",
+        "notes": ""
+      }
+    ]
   }
 ]
