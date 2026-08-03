@@ -5,20 +5,21 @@
     "plate": "GM363EW",
     "expiries": [
       {
-        "id": "exp-1785747226355",
-        "type": "assicurazione",
-        "cost": 300,
-        "date": "2026-08-01",
-        "endDate": "2027-08-01",
-        "notes": ""
-      },
-      {
         "id": "exp-1785747204327",
         "type": "revisione",
         "cost": 0,
         "date": "2026-12-01",
         "endDate": "",
         "notes": ""
+      },
+      {
+        "id": "exp-1785747226355",
+        "type": "assicurazione",
+        "cost": 300,
+        "date": "2026-05-01",
+        "endDate": "2027-04-30",
+        "notes": "",
+        "insurer": ""
       }
     ],
     "archived": false
