@@ -108,6 +108,14 @@
         "date": "2026-08-25",
         "endDate": "",
         "notes": ""
+      },
+      {
+        "id": "exp-1785771277555",
+        "type": "assicurazione",
+        "cost": 243,
+        "date": "2026-07-01",
+        "endDate": "2027-07-01",
+        "notes": ""
       }
     ]
   }
