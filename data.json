@@ -69,14 +69,6 @@
         "notes": ""
       },
       {
-        "id": "exp-1785752516247",
-        "type": "assicurazione",
-        "cost": 0,
-        "date": "2026-08-15",
-        "endDate": "2027-10-03",
-        "notes": ""
-      },
-      {
         "id": "exp-1785754976404",
         "type": "tagliando",
         "cost": 200,
@@ -90,6 +82,14 @@
         "cost": 200,
         "date": "2026-08-30",
         "endDate": "",
+        "notes": ""
+      },
+      {
+        "id": "exp-1785752516247",
+        "type": "assicurazione",
+        "cost": 212,
+        "date": "2025-11-30",
+        "endDate": "2026-11-30",
         "notes": ""
       }
     ],
