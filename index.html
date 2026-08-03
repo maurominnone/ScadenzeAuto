@@ -422,12 +422,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       setupEventListeners();
-      if (!config.user || !config.repo || !config.token) {
-        openModal('modalSettings');
-        updateSyncStatus('error', 'Token/Repo non configurati');
-      } else {
-        fetchDataFromGitHub();
-      }
+      loadData();
     });
 
     function updateSyncStatus(type, text) {
@@ -440,67 +435,140 @@
     /* ==========================================
        GITHUB API INTEGRATION (READ & WRITE)
        ========================================== */
-    async function fetchDataFromGitHub() {
-      updateSyncStatus('syncing', 'Sincronizzazione in corso...');
-      const url = `https://api.github.com/repos/${config.user}/${config.repo}/contents/data.json`;
+    async function loadData() {
+      // Prima prova a leggere data.json nella stessa cartella di index.html.
+      // Questo è il comportamento più semplice quando i file sono pubblicati insieme su GitHub Pages.
+      const localLoaded = await fetchDataFromLocalJson();
+      if (localLoaded) return;
 
+      // Se il file locale non è disponibile, prova via GitHub API con la configurazione salvata.
+      if (config.user && config.repo) {
+        await fetchDataFromGitHub();
+      } else {
+        cars = [];
+        renderApp();
+        updateSyncStatus('error', 'data.json non trovato. Configura GitHub.');
+        openModal('modalSettings');
+      }
+    }
+
+    async function fetchDataFromLocalJson() {
+      updateSyncStatus('syncing', 'Caricamento data.json...');
       try {
-        const res = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${config.token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        });
-
-        if (!res.ok) throw new Error('Errore durante la lettura da GitHub');
-
+        const res = await fetch('./data.json?ts=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) throw new Error('data.json non trovato nella stessa cartella');
         const data = await res.json();
-        fileSha = data.sha;
-        const decodedContent = new TextDecoder().decode(Uint8Array.from(atob(data.content), c => c.charCodeAt(0)));
-        cars = JSON.parse(decodedContent);
+        if (!Array.isArray(data)) throw new Error('data.json deve contenere un array di auto');
+        cars = data;
+        fileSha = '';
+        updateSyncStatus('online', 'Dati caricati da data.json');
+        renderApp();
+        return true;
+      } catch (err) {
+        console.warn('Lettura locale data.json fallita:', err);
+        return false;
+      }
+    }
 
+    function getGitHubApiUrl() {
+      return `https://api.github.com/repos/${config.user}/${config.repo}/contents/data.json`;
+    }
+
+    function getGitHubHeaders() {
+      const headers = { 'Accept': 'application/vnd.github.v3+json' };
+      if (config.token) headers['Authorization'] = `Bearer ${config.token}`;
+      return headers;
+    }
+
+    async function fetchDataFromGitHub() {
+      updateSyncStatus('syncing', 'Sincronizzazione GitHub...');
+      const url = getGitHubApiUrl();
+      try {
+        const res = await fetch(url, { headers: getGitHubHeaders(), cache: 'no-store' });
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('GitHub API error:', res.status, errorText);
+          updateSyncStatus('error', `Errore GitHub ${res.status}`);
+          alert(
+            'Non riesco a leggere data.json da GitHub.\n\n' +
+            'Status: ' + res.status + '\n\n' +
+            'Controlla che:\n' +
+            '1. il repository sia corretto;\n' +
+            '2. data.json sia nella root del repository;\n' +
+            '3. il token abbia permessi di lettura/scrittura sul repository.'
+          );
+          return;
+        }
+        const data = await res.json();
+        fileSha = data.sha || '';
+        const cleanContent = (data.content || '').replace(/\n/g, '');
+        const decodedContent = decodeURIComponent(escape(atob(cleanContent)));
+        const parsed = JSON.parse(decodedContent);
+        if (!Array.isArray(parsed)) throw new Error('data.json deve contenere un array di auto');
+        cars = parsed;
         updateSyncStatus('online', 'Sincronizzato con GitHub');
         renderApp();
       } catch (err) {
         console.error(err);
         updateSyncStatus('error', 'Errore di sincronizzazione');
+        alert('Errore di sincronizzazione. Apri la Console del browser per il dettaglio tecnico.');
       }
     }
 
+    async function ensureFileSha() {
+      if (fileSha) return fileSha;
+      const res = await fetch(getGitHubApiUrl(), { headers: getGitHubHeaders(), cache: 'no-store' });
+      if (!res.ok) return '';
+      const data = await res.json();
+      fileSha = data.sha || '';
+      return fileSha;
+    }
+
     async function saveDataToGitHub() {
-      updateSyncStatus('syncing', 'Salvataggio su cloud...');
-      const url = `https://api.github.com/repos/${config.user}/${config.repo}/contents/data.json`;
-      
+      if (!config.user || !config.repo || !config.token) {
+        alert('Per salvare su GitHub devi compilare Config con username, repository e token. I dati sono visibili ma non verranno scritti nel repository.');
+        renderApp();
+        return;
+      }
+
+      updateSyncStatus('syncing', 'Salvataggio su GitHub...');
+      const url = getGitHubApiUrl();
       const jsonString = JSON.stringify(cars, null, 2);
       const encodedContent = btoa(unescape(encodeURIComponent(jsonString)));
-
+      const sha = await ensureFileSha();
       const bodyData = {
         message: 'Aggiornamento scadenze da Web App',
-        content: encodedContent,
-        sha: fileSha
+        content: encodedContent
       };
+      if (sha) bodyData.sha = sha;
 
       try {
         const res = await fetch(url, {
           method: 'PUT',
           headers: {
-            'Authorization': `Bearer ${config.token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/vnd.github.v3+json'
+            ...getGitHubHeaders(),
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify(bodyData)
         });
-
-        if (!res.ok) throw new Error('Errore durante il salvataggio su GitHub');
-
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('GitHub save error:', res.status, errorText);
+          updateSyncStatus('error', `Errore salvataggio ${res.status}`);
+          alert(
+            'Impossibile salvare i dati su GitHub.\n\n' +
+            'Status: ' + res.status + '\n\n' +
+            'Verifica che il token abbia permessi di scrittura sul repository.'
+          );
+          return;
+        }
         const responseData = await res.json();
         fileSha = responseData.content.sha;
-
-        updateSyncStatus('online', 'Sincronizzato con GitHub');
+        updateSyncStatus('online', 'Salvato su GitHub');
         renderApp();
       } catch (err) {
         console.error(err);
-        alert('Impossibile salvare i dati su GitHub. Controlla il token o la connessione.');
+        alert('Impossibile salvare i dati su GitHub. Controlla token, repository e connessione.');
         updateSyncStatus('error', 'Errore salvataggio');
       }
     }
@@ -641,14 +709,7 @@
       }
 
       listEl.innerHTML = expiries.map(exp => {
-        const catConfig = CATEGORIES[exp.type] || { label: exp.type || 'Scadenza', color: 'var(--accent)' };
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const expDate = new Date(exp.date);
-        const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
-        let statusBadge = '<span class="badge badge-ok">OK</span>';
-        if (diffDays < 0) statusBadge = '<span class="badge badge-urgente">SCADUTA</span>';
-        else if (diffDays <= 30) statusBadge = '<span class="badge badge-inarrivo">IN ARRIVO</span>';
+        const catConfig = CATEGORIES[exp.type];
         return `
           <div class="expiry-item" onclick="openEditExpiry('${exp.id}')">
             <div class="expiry-header">
@@ -837,14 +898,8 @@
       return `${p[2]}/${p[1]}/${p[0]}`;
     }
 
-    function escapeHtml(str = '') {
-      return String(str).replace(/[&<>"']/g, m => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-      }[m]));
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
     }
   </script>
 </body>
