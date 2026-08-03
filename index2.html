@@ -493,6 +493,73 @@
   .compact-header,.compact-row{grid-template-columns:210px minmax(0,1fr) 48px;}
 }
 
+
+/* Raggruppamento per auto nella timeline compatta */
+.compact-car-group{
+  display:grid;
+  grid-template-columns:210px minmax(0,1fr) 48px;
+  gap:10px;
+  align-items:center;
+  height:30px;
+  width:100%;
+  min-width:0;
+  margin-top:8px;
+  border-top:1px solid var(--border-color);
+  color:var(--text-primary);
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.01em;
+}
+.compact-car-group:first-child{margin-top:0;border-top:0;}
+.compact-car-title{display:flex;align-items:center;gap:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.compact-car-count{font-size:10px;color:var(--text-muted);font-weight:700;}
+.compact-row.child-row .compact-name{padding-left:14px;font-weight:600;}
+.compact-car-line{height:1px;background:var(--border-color);width:100%;}
+@media (max-width:900px){
+  .compact-car-group{grid-template-columns:125px 1fr 40px;gap:8px;min-width:760px;width:auto;height:28px;}
+  .compact-row.child-row .compact-name{padding-left:10px;}
+}
+
+
+/* Mobile: KPI affiancate e minimal per recuperare spazio verticale */
+@media (max-width:900px){
+  .kpi-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:1rem;
+  }
+  .kpi-card{
+    padding:12px 14px;
+    min-height:72px;
+    border-radius:16px;
+  }
+  .kpi-title{
+    font-size:0.72rem;
+    line-height:1.15;
+    margin-bottom:4px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .kpi-value{
+    font-size:1.75rem;
+    line-height:1;
+    margin-top:2px;
+    letter-spacing:-0.04em;
+  }
+  .dashboard-header{
+    margin-bottom:1rem;
+  }
+  .dashboard-title h2{
+    font-size:1.75rem;
+    line-height:1.05;
+  }
+  .dashboard-title p{
+    font-size:0.95rem;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -545,7 +612,7 @@
         <div class="coverage-header">
           <div class="coverage-header-main">
             <div class="view-card-title" style="margin-bottom:0;">Coperture e Scadenze <span id="coverageYearLabel"></span></div>
-            <div class="coverage-version" id="appVersionInline">Versione v2026.08.03-1602</div>
+            <div class="coverage-version" id="appVersionInline">Versione v2026.08.03-1604</div>
           </div>
           <div class="coverage-year-actions">
             <button type="button" class="btn btn-secondary btn-sm" onclick="changeYear(-1)" style="width:auto;">‹</button>
@@ -577,7 +644,7 @@
     <button class="mobile-tab-item" data-target="detailPanel">Dettagli</button>
   </nav>
 
-  <div id="debugVersion" class="debug-version">v2026.08.03-1602</div>
+  <div id="debugVersion" class="debug-version">v2026.08.03-1604</div>
 
   <!-- MODALE CONFIGURAZIONE GITHUB -->
   <div class="modal-overlay" id="modalSettings">
@@ -683,7 +750,7 @@
   </div>
 
   <script>
-    const APP_VERSION = 'v2026.08.03-1602';
+    const APP_VERSION = 'v2026.08.03-1604';
     const CATEGORIES = {
       bollo: { label: 'Bollo', color: 'var(--cat-bollo)' },
       revisione: { label: 'Revisione', color: 'var(--cat-revisione)' },
@@ -867,7 +934,7 @@
  months.className='compact-month-header';
  list.className='compact-list';
  const monthNames=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
- months.innerHTML=`<div class="compact-header"><div>Tipo / Auto</div><div class="compact-timeline-head">${monthNames.map(m=>`<span>${m}</span>`).join('')}</div><div>GG</div></div>`;
+ months.innerHTML=`<div class="compact-header"><div>Auto / Scadenze</div><div class="compact-timeline-head">${monthNames.map(m=>`<span>${m}</span>`).join('')}</div><div>GG</div></div>`;
  const y0=new Date(currentYear,0,1);
  const y1=new Date(currentYear,11,31,23,59,59);
  const DAY=86400000;
@@ -877,27 +944,42 @@
  const rows=getAllExpiriesFiltered()
    .map(exp=>{const s=new Date(exp.date);const e=exp.endDate?new Date(exp.endDate):s;return {exp,s,e,period:!!exp.endDate};})
    .filter(r=>r.period?(r.e>=y0&&r.s<=y1):(r.s.getFullYear()===currentYear))
-   .sort((a,b)=>a.s-b.s||(a.e-b.e));
+   .sort((a,b)=>{
+     const carCompare=(a.exp.carName||'').localeCompare(b.exp.carName||'', 'it');
+     if(carCompare!==0) return carCompare;
+     return a.s-b.s||(a.e-b.e);
+   });
  if(rows.length===0){list.innerHTML=`<div class="coverage-empty">Nessuna copertura o scadenza nel ${currentYear}.</div>`;return;}
- let html='';
+ const grouped={};
  rows.forEach(r=>{
-   const c=CATEGORIES[r.exp.type]||{label:r.exp.type||'Scadenza',color:'var(--accent)'};
-   const days=Math.ceil((r.e-today)/DAY);
-   const daysLabel=days<0?`${Math.abs(days)} scad.`:`${days}`;
-   let visual='';
-   if(r.period){
-     const start=r.s<y0?y0:r.s;
-     const end=r.e>y1?y1:r.e;
-     const l=pct(start);
-     const rr=pct(end);
-     const w=Math.max(2,rr-l);
-     visual=`<div class="compact-track"><div class="compact-bar" style="left:${l}%;width:${w}%;background:${c.color}"></div>${r.e<=y1?`<div class="compact-point" style="left:${rr}%;background:${c.color}"></div>`:''}</div>`;
-   }else{
-     const p=pct(r.s);
-     visual=`<div class="compact-track"><div class="compact-point" style="left:${p}%;background:${c.color}"></div></div>`;
-   }
-   const carLabel=(r.exp.carName||'').replace(/^Auto\s*/i,'');
-   html+=`<div class="compact-row" onclick="openEditExpiry('${r.exp.id}')" title="${c.label} - ${r.exp.carName} ${r.exp.endDate?formatDate(r.exp.date)+' → '+formatDate(r.exp.endDate):formatDate(r.exp.date)}"><div class="compact-name"><span class="cat-dot" style="background:${c.color}"></span>${c.label} · ${escapeHtml(carLabel)}</div><div>${visual}</div><div class="compact-days">${daysLabel}</div></div>`;
+   const key=r.exp.carName||'Senza auto';
+   if(!grouped[key]) grouped[key]=[];
+   grouped[key].push(r);
+ });
+ let html='';
+ Object.keys(grouped).sort((a,b)=>a.localeCompare(b,'it')).forEach(carName=>{
+   const groupRows=grouped[carName];
+   const carShort=String(carName).replace(/^Auto\s*/i,'');
+   html+=`<div class="compact-car-group"><div class="compact-car-title">🚗 ${escapeHtml(carShort)} <span class="compact-car-count">${groupRows.length}</span></div><div class="compact-car-line"></div><div></div></div>`;
+   groupRows.forEach(r=>{
+     const c=CATEGORIES[r.exp.type]||{label:r.exp.type||'Scadenza',color:'var(--accent)'};
+     const days=Math.ceil((r.e-today)/DAY);
+     const daysLabel=days<0?`${Math.abs(days)} scad.`:`${days}`;
+     let visual='';
+     if(r.period){
+       const start=r.s<y0?y0:r.s;
+       const end=r.e>y1?y1:r.e;
+       const l=pct(start);
+       const rr=pct(end);
+       const w=Math.max(2,rr-l);
+       visual=`<div class="compact-track"><div class="compact-bar" style="left:${l}%;width:${w}%;background:${c.color}"></div>${r.e<=y1?`<div class="compact-point" style="left:${rr}%;background:${c.color}"></div>`:''}</div>`;
+     }else{
+       const p=pct(r.s);
+       visual=`<div class="compact-track"><div class="compact-point" style="left:${p}%;background:${c.color}"></div></div>`;
+     }
+     const dateText=r.exp.endDate?`${formatDate(r.exp.date)} → ${formatDate(r.exp.endDate)}`:formatDate(r.exp.date);
+     html+=`<div class="compact-row child-row" onclick="openEditExpiry('${r.exp.id}')" title="${c.label} - ${r.exp.carName} ${dateText}"><div class="compact-name"><span class="cat-dot" style="background:${c.color}"></span>${escapeHtml(c.label)}</div><div>${visual}</div><div class="compact-days">${daysLabel}</div></div>`;
+   });
  });
  list.innerHTML=html;
 }
