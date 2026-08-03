@@ -206,8 +206,8 @@
     .gantt-mobile-title { font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; }
     .gantt-mobile-car { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem; }
     .gantt-mobile-dates { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
-    .gantt-mobile-progress { height: 12px; background: var(--bg-tertiary); border-radius: 999px; overflow: hidden; }
-    .gantt-mobile-progress-bar { height: 100%; min-width: 2px; border-radius: 999px; }
+    .gantt-mobile-progress { height: 12px; background: var(--bg-tertiary); border-radius: 999px; overflow: hidden; position: relative; }
+    .gantt-mobile-progress-bar { height: 100%; min-width: 28px; border-radius: 999px; transition: width 0.25s ease; }
     .gantt-mobile-days { font-size: 0.72rem; color: var(--text-muted); display: flex; justify-content: space-between; gap: 0.5rem; }
 
 
@@ -648,9 +648,9 @@
             const end = new Date(exp.endDate);
             const visibleStart = start < yearStart ? yearStart : start;
             const visibleEnd = end > yearEnd ? yearEnd : end;
-            const totalDays = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
-            const elapsedDays = Math.ceil((today - start) / (1000 * 60 * 60 * 24));
-            const progress = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
+            const yearDays = Math.max(1, Math.ceil((yearEnd - yearStart) / (1000 * 60 * 60 * 24)));
+            const visibleDays = Math.max(1, Math.ceil((visibleEnd - visibleStart) / (1000 * 60 * 60 * 24)));
+            const progress = Math.min(100, Math.max(8, (visibleDays / yearDays) * 100));
             const remainingDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
             const catConfig = CATEGORIES[exp.type] || { label: exp.type || 'Scadenza', color: 'var(--accent)' };
             const remainingLabel = remainingDays < 0 ? `Scaduta da ${Math.abs(remainingDays)} gg` : `${remainingDays} gg rimanenti`;
