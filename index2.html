@@ -383,7 +383,16 @@
       .detail-panel.mobile-active { display: flex; }
       .mobile-tab-bar { display: flex; }
     }
-  </style>
+  
+.compact-header{display:grid;grid-template-columns:220px 1fr 60px;gap:10px;padding:0 0 8px;border-bottom:1px solid var(--border-color);font-size:11px;color:var(--text-muted);font-weight:700;min-width:900px;}
+.compact-row{display:grid;grid-template-columns:220px 1fr 60px;gap:10px;align-items:center;height:34px;min-width:900px;border-bottom:1px solid var(--border-color);cursor:pointer;}
+.compact-name{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap}
+.compact-days{text-align:right;font-size:12px;font-weight:700;color:var(--text-muted)}
+.compact-track{position:relative;height:10px;background:var(--bg-tertiary);border-radius:999px}
+.compact-bar{position:absolute;height:10px;border-radius:999px;top:0}
+.compact-point{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;transform:translate(-50%,-50%)}
+
+</style>
 </head>
 <body>
 
@@ -435,7 +444,7 @@
         <div class="coverage-header">
           <div class="coverage-header-main">
             <div class="view-card-title" style="margin-bottom:0;">Coperture e Scadenze <span id="coverageYearLabel"></span></div>
-            <div class="coverage-version" id="appVersionInline">Versione v2026.08.03-1501</div>
+            <div class="coverage-version" id="appVersionInline">Versione v2026.08.03-1600</div>
           </div>
           <div class="coverage-year-actions">
             <button type="button" class="btn btn-secondary btn-sm" onclick="changeYear(-1)" style="width:auto;">‹</button>
@@ -467,7 +476,7 @@
     <button class="mobile-tab-item" data-target="detailPanel">Dettagli</button>
   </nav>
 
-  <div id="debugVersion" class="debug-version">v2026.08.03-1501</div>
+  <div id="debugVersion" class="debug-version">v2026.08.03-1600</div>
 
   <!-- MODALE CONFIGURAZIONE GITHUB -->
   <div class="modal-overlay" id="modalSettings">
@@ -573,7 +582,7 @@
   </div>
 
   <script>
-    const APP_VERSION = 'v2026.08.03-1501';
+    const APP_VERSION = 'v2026.08.03-1600';
     const CATEGORIES = {
       bollo: { label: 'Bollo', color: 'var(--cat-bollo)' },
       revisione: { label: 'Revisione', color: 'var(--cat-revisione)' },
@@ -749,96 +758,33 @@
 
 
     function renderUnifiedTimeline() {
-      const monthsContainer = document.getElementById('coverageMonths');
-      const listContainer = document.getElementById('coverageTimelineList');
-      const yearLabel = document.getElementById('coverageYearLabel');
-      if (!monthsContainer || !listContainer || !yearLabel) return;
+ const ym=document.getElementById("coverageYearLabel");
+ const list=document.getElementById("coverageTimelineList");
+ const months=document.getElementById("coverageMonths");
+ if(!ym||!list||!months) return;
+ ym.innerText=currentYear;
+ months.innerHTML='';
+ const labels=['Tipo / Auto','Timeline annuale','GG'];
+ list.innerHTML='';
+ const y0=new Date(currentYear,0,1);
+ const y1=new Date(currentYear,11,31,23,59,59);
+ months.innerHTML=`<div class="compact-header"><div>${labels[0]}</div><div>Gen Feb Mar Apr Mag Giu Lug Ago Set Ott Nov Dic</div><div>${labels[2]}</div></div>`;
+ const DAY=86400000;
+ const rows=getAllExpiriesFiltered().map(exp=>{const s=new Date(exp.date);const e=exp.endDate?new Date(exp.endDate):s;return {exp,s,e,period:!!exp.endDate};}).filter(r=>r.period?(r.e>=y0&&r.s<=y1):(r.s.getFullYear()===currentYear)).sort((a,b)=>a.s-b.s);
+ const range=(d)=>Math.min(98,Math.max(1,((d-y0)/(y1-y0))*100));
+ let html='';
+ rows.forEach(r=>{
+ const c=CATEGORIES[r.exp.type]||{label:r.exp.type,color:'var(--accent)'};
+ const days=Math.ceil((r.e-new Date())/DAY);
+ let visual='';
+ if(r.period){const l=range(r.s<y0?y0:r.s);const rr=range(r.e>y1?y1:r.e);visual=`<div class="compact-track"><div class="compact-bar" style="left:${l}%;width:${Math.max(2,rr-l)}%;background:${c.color}"></div>${r.e<=y1?`<div class="compact-point" style="left:${rr}%;background:${c.color}"></div>`:''}</div>`;}
+ else{const p=range(r.s);visual=`<div class="compact-track"><div class="compact-point" style="left:${p}%;background:${c.color}"></div></div>`;}
+ html+=`<div class="compact-row" onclick="openEditExpiry('${r.exp.id}')"><div class="compact-name"><span class="cat-dot" style="background:${c.color}"></span>${c.label} · ${r.exp.carName}</div><div>${visual}</div><div class="compact-days">${days}</div></div>`;
+ });
+ list.innerHTML=html;
+}
 
-      yearLabel.innerText = currentYear;
-      const monthsNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
-      monthsContainer.innerHTML = monthsNames.map(m => `<span>${m}</span>`).join('');
-
-      const DAY = 1000 * 60 * 60 * 24;
-      const yearStart = new Date(currentYear, 0, 1);
-      const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59);
-      const yearDays = Math.max(1, Math.ceil((yearEnd - yearStart) / DAY));
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      function pct(date) {
-        return Math.min(98, Math.max(2, ((date - yearStart) / (yearEnd - yearStart)) * 100));
-      }
-
-      const items = getAllExpiriesFiltered()
-        .map(exp => {
-          const start = new Date(exp.date);
-          const hasPeriod = !!exp.endDate;
-          const end = hasPeriod ? new Date(exp.endDate) : start;
-          const visible = hasPeriod
-            ? (end >= yearStart && start <= yearEnd)
-            : (start.getFullYear() === currentYear);
-          return { exp, start, end, hasPeriod, visible };
-        })
-        .filter(item => item.visible)
-        .sort((a, b) => a.start - b.start || a.end - b.end);
-
-      if (items.length === 0) {
-        listContainer.innerHTML = `<div class="coverage-empty">Nessuna copertura o scadenza nel ${currentYear}.</div>`;
-        return;
-      }
-
-      listContainer.innerHTML = items.map(item => {
-        const exp = item.exp;
-        const catConfig = CATEGORIES[exp.type] || { label: exp.type || 'Scadenza', color: 'var(--accent)' };
-        const remainingDays = Math.ceil((item.end - today) / DAY);
-        const remainingLabel = remainingDays < 0 ? `Scaduta da ${Math.abs(remainingDays)} gg` : `${remainingDays} gg rimanenti`;
-        const itemTypeLabel = item.hasPeriod ? 'Periodo' : 'Data singola';
-        let visual = '';
-        let dateLabel = '';
-
-        if (item.hasPeriod) {
-          const visibleStart = item.start < yearStart ? yearStart : item.start;
-          const visibleEnd = item.end > yearEnd ? yearEnd : item.end;
-          const leftPct = pct(visibleStart);
-          const rightPct = pct(visibleEnd);
-          const widthPct = Math.max(2, rightPct - leftPct);
-          const endInYear = item.end >= yearStart && item.end <= yearEnd;
-          const continuation = item.end > yearEnd;
-          visual = `
-            <div class="coverage-bar" style="left:${leftPct}%; width:${widthPct}%; background-color:${catConfig.color};"></div>
-            ${endInYear ? `<div class="coverage-end-point" style="left:${rightPct}%; background-color:${catConfig.color};"></div>` : ''}
-            ${continuation ? `<div class="coverage-continuation" style="left:98%; background-color:${catConfig.color};">›</div>` : ''}
-          `;
-          dateLabel = `${formatDate(exp.date)} → ${formatDate(exp.endDate)}`;
-        } else {
-          const pointPct = pct(item.start);
-          visual = `<div class="coverage-point" style="left:${pointPct}%; background-color:${catConfig.color};"></div>`;
-          dateLabel = formatDate(exp.date);
-        }
-
-        return `
-          <div class="coverage-item" onclick="openEditExpiry('${exp.id}')">
-            <div class="coverage-meta">
-              <div>
-                <div class="coverage-name">
-                  <span class="cat-dot" style="background-color:${catConfig.color}"></span>
-                  ${escapeHtml(catConfig.label)}
-                </div>
-                <div class="coverage-car">${escapeHtml(exp.carName)} (${escapeHtml(exp.carPlate)})</div>
-              </div>
-              <span class="coverage-kind">${itemTypeLabel}</span>
-            </div>
-            <div class="coverage-track">${visual}</div>
-            <div class="coverage-info">
-              <span>${dateLabel}</span>
-              <span>${remainingLabel}</span>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function renderTimeline() {
+function renderTimeline() {
       const monthsContainer = document.getElementById('timelineMonths');
       const trackContainer = document.getElementById('timelineTrack');
       if (!monthsContainer || !trackContainer) return;
