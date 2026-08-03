@@ -58,6 +58,15 @@
     "id": "car-1785747300419",
     "name": "Auto due",
     "plate": "AB123C",
-    "expiries": []
+    "expiries": [
+      {
+        "id": "exp-1785752480041",
+        "type": "bollo",
+        "cost": 55,
+        "date": "2026-08-21",
+        "endDate": "",
+        "notes": ""
+      }
+    ]
   }
 ]
