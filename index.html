@@ -160,7 +160,7 @@
     .timeline-container { display: flex; flex-direction: column; gap: 0.5rem; overflow-x: auto; }
     .timeline-months { display: grid; grid-template-columns: repeat(12, 1fr); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; min-width: 600px; }
     .month-col { text-align: center; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
-    .timeline-track { position: relative; height: 70px; background-color: var(--bg-tertiary); border-radius: 8px; min-width: 600px; overflow: visible; }
+    .timeline-track { position: relative; height: 40px; background-color: var(--bg-tertiary); border-radius: 8px; min-width: 600px; }
     .timeline-marker { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 26px; height: 26px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
 
     .gantt-container { display: flex; flex-direction: column; gap: 0.75rem; min-width: 600px; overflow-x: auto; }
@@ -199,14 +199,28 @@
 
     .mobile-tab-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--bg-secondary); border-top: 1px solid var(--border-color); z-index: 50; height: 55px; }
     .mobile-tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.65rem; color: var(--text-muted); background: none; border: none; }
-    .mobile-tab-item.active { color: var(--accent); font-weight: 600; }
+    .mobile-tab-item.active { color: var(--accent); font-weight: 600; }  
+    .gantt-mobile-list { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; overflow: visible; }
+    .gantt-mobile-card { background-color: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.85rem; display: flex; flex-direction: column; gap: 0.55rem; }
+    .gantt-mobile-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
+    .gantt-mobile-title { font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; }
+    .gantt-mobile-car { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem; }
+    .gantt-mobile-dates { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
+    .gantt-mobile-progress { height: 12px; background: var(--bg-tertiary); border-radius: 999px; overflow: hidden; }
+    .gantt-mobile-progress-bar { height: 100%; min-width: 2px; border-radius: 999px; }
+    .gantt-mobile-days { font-size: 0.72rem; color: var(--text-muted); display: flex; justify-content: space-between; gap: 0.5rem; }
+
 
     @media (max-width: 900px) {
-      .timeline-container { overflow-x:auto; overflow-y:visible; padding-bottom:24px; }
-      .timeline-track { height:70px !important; overflow:visible; }
-      .timeline-marker { z-index:20; }
 
-      body { flex-direction: column; }
+      body { flex-direction: column; overflow-x: hidden; }
+      .main-content { padding: 1rem; width: 100%; max-width: 100vw; overflow-x: hidden; }
+      .view-card { width: 100%; max-width: 100%; overflow: visible; }
+      .timeline-container { overflow-x:auto; overflow-y:visible; padding-bottom:28px; }
+      .timeline-track { height:76px !important; overflow:visible; }
+      .timeline-marker { z-index:20; }
+      .gantt-container { min-width: 0; overflow: visible; }
+
       .app-container { height: calc(100vh - 55px); }
       .sidebar { width: 100%; height: 100%; display: none; }
       .sidebar.mobile-active { display: flex; }
@@ -419,6 +433,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       setupEventListeners();
+      window.addEventListener('resize', () => renderGantt());
       if (!config.user || !config.repo || !config.token) {
         openModal('modalSettings');
         updateSyncStatus('error', 'Token/Repo non configurati');
@@ -565,67 +580,122 @@
     function renderTimeline() {
       const monthsContainer = document.getElementById('timelineMonths');
       const trackContainer = document.getElementById('timelineTrack');
-      const now = new Date();
-      document.getElementById('timelineYearLabel').innerText = currentYear; const monthsNames
-      const monthsNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giun', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+      document.getElementById('timelineYearLabel').innerText = currentYear;
 
+      const monthsNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
       monthsContainer.innerHTML = monthsNames.map(m => `<div class="month-col">${m}</div>`).join('');
       trackContainer.innerHTML = '';
+
+      const startOfYear = new Date(currentYear, 0, 1);
+      const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59);
 
       getAllExpiriesFiltered().forEach(exp => {
         const d = new Date(exp.date);
         if (d.getFullYear() === currentYear) {
-          const startOfYear = new Date(currentYear, 0, 1);
-          const endOfYear = new Date(currentYear, 11, 31);
           const posPercent = ((d - startOfYear) / (endOfYear - startOfYear)) * 100;
-          const catConfig = CATEGORIES[exp.type] || { color: 'var(--accent)' };
-
+          const catConfig = CATEGORIES[exp.type] || { label: exp.type || 'Scadenza', color: 'var(--accent)' };
           const marker = document.createElement('div');
           marker.className = 'timeline-marker';
           marker.style.left = `${Math.min(Math.max(posPercent, 2), 98)}%`;
           marker.style.backgroundColor = catConfig.color;
           marker.innerText = d.getDate();
+          marker.title = `${catConfig.label} - ${formatDate(exp.date)}`;
+          marker.onclick = () => openEditExpiry(exp.id);
           trackContainer.appendChild(marker);
         }
       });
     }
-
     function renderGantt() {
       const container = document.getElementById('ganttContainer');
-      const expiries = getAllExpiriesFiltered().filter(e => e.endDate);
       document.getElementById('ganttYearLabel').innerText = currentYear;
 
+      const yearStart = new Date(currentYear, 0, 1);
+      const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59);
+
+      const expiries = getAllExpiriesFiltered()
+        .filter(e => e.endDate)
+        .filter(e => {
+          const start = new Date(e.date);
+          const end = new Date(e.endDate);
+          return end >= yearStart && start <= yearEnd;
+        });
+
       if (expiries.length === 0) {
-        container.innerHTML = `<div style="font-size:0.8rem; color:var(--text-muted);">Nessuna copertura inserita.</div>`;
+        container.className = 'gantt-container';
+        container.innerHTML = `<div style="font-size:0.8rem; color:var(--text-muted);">Nessuna copertura valida nel ${currentYear}.</div>`;
         return;
       }
 
-      const startOfYear = new Date(currentYear, 0, 1);
-      const endOfYear = new Date(currentYear, 11, 31);
+      const isMobile = window.matchMedia('(max-width: 900px)').matches;
 
+      if (isMobile) {
+        container.className = 'gantt-container gantt-mobile-list';
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        container.innerHTML = expiries
+          .sort((a, b) => new Date(a.endDate) - new Date(b.endDate))
+          .map(exp => {
+            const start = new Date(exp.date);
+            const end = new Date(exp.endDate);
+            const visibleStart = start < yearStart ? yearStart : start;
+            const visibleEnd = end > yearEnd ? yearEnd : end;
+            const totalDays = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+            const elapsedDays = Math.ceil((today - start) / (1000 * 60 * 60 * 24));
+            const progress = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
+            const remainingDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+            const catConfig = CATEGORIES[exp.type] || { label: exp.type || 'Scadenza', color: 'var(--accent)' };
+            const remainingLabel = remainingDays < 0 ? `Scaduta da ${Math.abs(remainingDays)} gg` : `${remainingDays} gg rimanenti`;
+
+            return `
+              <div class="gantt-mobile-card" onclick="openEditExpiry('${exp.id}')">
+                <div class="gantt-mobile-head">
+                  <div>
+                    <div class="gantt-mobile-title">
+                      <span class="cat-dot" style="background-color: ${catConfig.color}"></span>
+                      ${escapeHtml(catConfig.label)}
+                    </div>
+                    <div class="gantt-mobile-car">${escapeHtml(exp.carName)} (${escapeHtml(exp.carPlate)})</div>
+                  </div>
+                  <div class="gantt-mobile-dates">${formatDate(exp.date)} → ${formatDate(exp.endDate)}</div>
+                </div>
+                <div class="gantt-mobile-progress">
+                  <div class="gantt-mobile-progress-bar" style="width: ${progress}%; background-color: ${catConfig.color};"></div>
+                </div>
+                <div class="gantt-mobile-days">
+                  <span>${formatDate(toIsoDate(visibleStart))} → ${formatDate(toIsoDate(visibleEnd))}</span>
+                  <span>${remainingLabel}</span>
+                </div>
+              </div>
+            `;
+          }).join('');
+        return;
+      }
+
+      container.className = 'gantt-container';
       container.innerHTML = expiries.map(exp => {
         const start = new Date(exp.date);
         const end = new Date(exp.endDate);
+        const clippedStart = start < yearStart ? yearStart : start;
+        const clippedEnd = end > yearEnd ? yearEnd : end;
 
-        let startPct = Math.max(0, Math.min(100, ((start - startOfYear) / (endOfYear - startOfYear)) * 100));
-        let endPct = Math.max(0, Math.min(100, ((end - startOfYear) / (endOfYear - startOfYear)) * 100));
+        let startPct = Math.max(0, Math.min(100, ((clippedStart - yearStart) / (yearEnd - yearStart)) * 100));
+        let endPct = Math.max(0, Math.min(100, ((clippedEnd - yearStart) / (yearEnd - yearStart)) * 100));
         let widthPct = Math.max(2, endPct - startPct);
-
-        const catConfig = CATEGORIES[exp.type] || { color: 'var(--accent)' };
+        const catConfig = CATEGORIES[exp.type] || { label: exp.type || 'Scadenza', color: 'var(--accent)' };
 
         return `
           <div class="gantt-row">
             <div class="gantt-label">${escapeHtml(exp.carName)}</div>
             <div class="gantt-track-bg">
-              <div class="gantt-bar" style="left: ${startPct}%; width: ${widthPct}%; background-color: ${catConfig.color};">
-                ${catConfig.label}
+              <div class="gantt-bar" style="left: ${startPct}%; width: ${widthPct}%; background-color: ${catConfig.color};" title="${catConfig.label}: ${formatDate(exp.date)} → ${formatDate(exp.endDate)}">
+                ${escapeHtml(catConfig.label)}
               </div>
             </div>
           </div>
         `;
       }).join('');
     }
-
     function renderDetailPanel() {
       const expiries = getAllExpiriesFiltered();
       expiries.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -816,14 +886,24 @@
       });
     }
 
+    function toIsoDate(date) {
+      return date.toISOString().slice(0, 10);
+    }
+
     function formatDate(d) {
       if (!d) return '';
       const p = d.split('-');
       return `${p[2]}/${p[1]}/${p[0]}`;
     }
 
-    function escapeHtml(str) {
-      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
+    function escapeHtml(str = '') {
+      return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      }[m]));
     }
   </script>
 </body>
