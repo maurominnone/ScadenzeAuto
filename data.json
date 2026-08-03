@@ -94,5 +94,12 @@
       }
     ],
     "archived": false
+  },
+  {
+    "id": "car-1785769606709",
+    "name": "Fiat Panda",
+    "plate": "AB111AB",
+    "archived": false,
+    "expiries": []
   }
 ]
