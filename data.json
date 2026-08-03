@@ -19,14 +19,6 @@
         "date": "2026-12-01",
         "endDate": "",
         "notes": ""
-      },
-      {
-        "id": "exp-1785747284256",
-        "type": "tagliando",
-        "cost": 500,
-        "date": "2026-09-06",
-        "endDate": "",
-        "notes": ""
       }
     ],
     "archived": false
