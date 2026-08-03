@@ -1,8 +1,8 @@
 [
   {
     "id": "car-1785747178765",
-    "name": "Auto uno",
-    "plate": "AB123C",
+    "name": "Auto uno mod",
+    "plate": "AB123E",
     "expiries": [
       {
         "id": "exp-1785747192769",
@@ -52,7 +52,8 @@
         "endDate": "2027-02-18",
         "notes": ""
       }
-    ]
+    ],
+    "archived": false
   },
   {
     "id": "car-1785747300419",
@@ -83,6 +84,7 @@
         "endDate": "",
         "notes": ""
       }
-    ]
+    ],
+    "archived": false
   }
 ]
