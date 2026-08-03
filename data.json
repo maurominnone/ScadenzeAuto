@@ -21,18 +21,18 @@
         "notes": ""
       },
       {
-        "id": "exp-1785747284256",
-        "type": "tagliando",
-        "cost": 500,
-        "date": "2026-09-06",
-        "endDate": "",
-        "notes": ""
-      },
-      {
         "id": "exp-1785747204327",
         "type": "revisione",
         "cost": 0,
         "date": "2026-12-01",
+        "endDate": "",
+        "notes": ""
+      },
+      {
+        "id": "exp-1785747284256",
+        "type": "tagliando",
+        "cost": 500,
+        "date": "2026-09-06",
         "endDate": "",
         "notes": ""
       }
