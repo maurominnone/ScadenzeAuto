@@ -560,6 +560,130 @@
   }
 }
 
+
+/* v2026.08.03-1605 - Allineamento definitivo mesi / barre / gruppi auto */
+:root{
+  --compact-left-col: 170px;
+  --compact-days-col: 46px;
+  --compact-gap: 10px;
+  --compact-mobile-width: 860px;
+  --compact-mobile-left-col: 145px;
+  --compact-mobile-days-col: 44px;
+}
+
+.coverage-scroll{
+  width:100%;
+  box-sizing:border-box;
+}
+
+.compact-month-header,
+.compact-list{
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+}
+
+.compact-header,
+.compact-row,
+.compact-car-group{
+  box-sizing:border-box;
+  display:grid !important;
+  grid-template-columns: var(--compact-left-col) minmax(0,1fr) var(--compact-days-col) !important;
+  column-gap: var(--compact-gap) !important;
+  width:100% !important;
+  min-width:0 !important;
+  align-items:center;
+}
+
+.compact-header > div,
+.compact-row > div,
+.compact-car-group > div{
+  min-width:0;
+  box-sizing:border-box;
+}
+
+.compact-timeline-head,
+.compact-track,
+.compact-car-line{
+  width:100% !important;
+  min-width:0 !important;
+  box-sizing:border-box;
+}
+
+.compact-timeline-head{
+  display:grid !important;
+  grid-template-columns:repeat(12,minmax(0,1fr)) !important;
+  align-items:center;
+}
+
+.compact-timeline-head span{
+  display:block;
+  text-align:center;
+  overflow:hidden;
+  text-overflow:clip;
+  white-space:nowrap;
+  min-width:0;
+}
+
+.compact-track{
+  position:relative;
+  background-origin:border-box;
+  background-clip:border-box;
+}
+
+.compact-bar,
+.compact-point{
+  box-sizing:border-box;
+}
+
+.compact-name,
+.compact-car-title{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+@media (min-width:901px){
+  .coverage-scroll{overflow-x:hidden !important;}
+  .compact-month-header,
+  .compact-list{
+    width:100% !important;
+    min-width:0 !important;
+  }
+  .compact-header,
+  .compact-row,
+  .compact-car-group{
+    width:100% !important;
+    min-width:0 !important;
+    grid-template-columns: var(--compact-left-col) minmax(0,1fr) var(--compact-days-col) !important;
+  }
+}
+
+@media (max-width:900px){
+  .coverage-scroll{
+    overflow-x:auto !important;
+    overflow-y:visible;
+    -webkit-overflow-scrolling:touch;
+  }
+  .compact-month-header,
+  .compact-list{
+    width:var(--compact-mobile-width) !important;
+    min-width:var(--compact-mobile-width) !important;
+  }
+  .compact-header,
+  .compact-row,
+  .compact-car-group{
+    width:var(--compact-mobile-width) !important;
+    min-width:var(--compact-mobile-width) !important;
+    grid-template-columns: var(--compact-mobile-left-col) minmax(0,1fr) var(--compact-mobile-days-col) !important;
+    column-gap:8px !important;
+  }
+  .compact-header{height:30px;}
+  .compact-row{height:30px;}
+  .compact-car-group{height:28px;}
+  .compact-timeline-head span{font-size:10px;}
+}
+
 </style>
 </head>
 <body>
@@ -612,7 +736,7 @@
         <div class="coverage-header">
           <div class="coverage-header-main">
             <div class="view-card-title" style="margin-bottom:0;">Coperture e Scadenze <span id="coverageYearLabel"></span></div>
-            <div class="coverage-version" id="appVersionInline">Versione v2026.08.03-1604</div>
+            <div class="coverage-version" id="appVersionInline">Versione v2026.08.03-1605</div>
           </div>
           <div class="coverage-year-actions">
             <button type="button" class="btn btn-secondary btn-sm" onclick="changeYear(-1)" style="width:auto;">‹</button>
@@ -644,7 +768,7 @@
     <button class="mobile-tab-item" data-target="detailPanel">Dettagli</button>
   </nav>
 
-  <div id="debugVersion" class="debug-version">v2026.08.03-1604</div>
+  <div id="debugVersion" class="debug-version">v2026.08.03-1605</div>
 
   <!-- MODALE CONFIGURAZIONE GITHUB -->
   <div class="modal-overlay" id="modalSettings">
@@ -750,7 +874,7 @@
   </div>
 
   <script>
-    const APP_VERSION = 'v2026.08.03-1604';
+    const APP_VERSION = 'v2026.08.03-1605';
     const CATEGORIES = {
       bollo: { label: 'Bollo', color: 'var(--cat-bollo)' },
       revisione: { label: 'Revisione', color: 'var(--cat-revisione)' },
