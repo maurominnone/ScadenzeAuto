@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto Scadenze - Sync GitHub</title>
+  <style>
+    :root {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f5f9;
+      --border-color: #e2e8f0;
+      
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-white: #ffffff;
+
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-light: #eff6ff;
+
+      --danger: #ef4444;
+      --danger-bg: #fef2f2;
+      --warning: #f59e0b;
+      --warning-bg: #fffbeb;
+      --success: #10b981;
+      --success-bg: #ecfdf5;
+
+      --cat-bollo: #8b5cf6;
+      --cat-revisione: #06b6d4;
+      --cat-assicurazione: #3b82f6;
+      --cat-assistenza: #10b981;
+      --cat-gomme: #f59e0b;
+      --cat-tagliando: #ec4899;
+
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      --radius: 12px;
+      --transition: all 0.2s ease;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --border-color: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-light: rgba(59, 130, 246, 0.15);
+      --danger-bg: rgba(239, 68, 68, 0.15);
+      --warning-bg: rgba(245, 158, 11, 0.15);
+      --success-bg: rgba(16, 185, 129, 0.15);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .app-container { display: flex; width: 100%; height: 100vh; overflow: hidden; }
+
+    .sidebar {
+      width: 280px;
+      background-color: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .brand {
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .brand h1 { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+
+    .sync-status {
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background-color: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sync-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--text-muted);
+    }
+    .sync-dot.online { background-color: var(--success); }
+    .sync-dot.syncing { background-color: var(--warning); }
+    .sync-dot.error { background-color: var(--danger); }
+
+    .car-list-container { flex: 1; overflow-y: auto; padding: 1rem; }
+    .section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem; display: flex; justify-content: space-between; }
+
+    .car-item {
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .car-item:hover { background-color: var(--bg-tertiary); }
+    .car-item.active { background-color: var(--accent-light); border-color: var(--accent); }
+
+    .car-info .car-name { font-weight: 600; font-size: 0.9rem; }
+    .car-info .car-plate { font-size: 0.75rem; color: var(--text-muted); font-family: monospace; background: var(--bg-tertiary); padding: 1px 4px; border-radius: 4px; }
+
+    .btn-delete-car { background: none; border: none; color: var(--text-muted); cursor: pointer; opacity: 0; padding: 4px; }
+    .car-item:hover .btn-delete-car { opacity: 1; }
+    .btn-delete-car:hover { color: var(--danger); }
+
+    .sidebar-actions { padding: 1rem; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .main-content { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+
+    .dashboard-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    .dashboard-title h2 { font-size: 1.5rem; font-weight: 700; }
+    .dashboard-title p { color: var(--text-muted); font-size: 0.85rem; }
+
+    .detail-panel { width: 320px; background-color: var(--bg-secondary); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; }
+    .detail-header { padding: 1.25rem; border-bottom: 1px solid var(--border-color); font-weight: 700; }
+    .detail-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 1.25rem; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.6rem 1rem; font-size: 0.85rem; font-weight: 600; border-radius: var(--radius); border: 1px solid transparent; cursor: pointer; transition: var(--transition); width: 100%; }
+    .btn-primary { background-color: var(--accent); color: var(--text-white); }
+    .btn-primary:hover { background-color: var(--accent-hover); }
+    .btn-secondary { background-color: var(--bg-tertiary); color: var(--text-main); border-color: var(--border-color); }
+    .btn-danger { background-color: var(--danger-bg); color: var(--danger); }
+    .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.75rem; width: auto; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+    .kpi-card { background-color: var(--bg-secondary); padding: 1rem; border-radius: var(--radius); border: 1px solid var(--border-color); }
+    .kpi-label { font-size: 0.8rem; color: var(--text-muted); }
+    .kpi-value { font-size: 1.6rem; font-weight: 700; margin-top: 0.2rem; }
+    .kpi-card.urgent .kpi-value { color: var(--danger); }
+    .kpi-card.info .kpi-value { color: var(--accent); }
+
+    .view-card { background-color: var(--bg-secondary); border-radius: var(--radius); border: 1px solid var(--border-color); padding: 1.25rem; }
+    .view-card-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; }
+
+    .timeline-container { display: flex; flex-direction: column; gap: 0.5rem; overflow-x: auto; }
+    .timeline-months { display: grid; grid-template-columns: repeat(12, 1fr); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; min-width: 600px; }
+    .month-col { text-align: center; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+    .timeline-track { position: relative; height: 70px; background-color: var(--bg-tertiary); border-radius: 8px; min-width: 600px; overflow: visible; }
+    .timeline-marker { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 26px; height: 26px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
+
+    .gantt-container { display: flex; flex-direction: column; gap: 0.75rem; min-width: 600px; overflow-x: auto; }
+    .gantt-row { display: flex; align-items: center; gap: 1rem; }
+    .gantt-label { width: 140px; font-size: 0.8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gantt-track-bg { flex: 1; height: 22px; background-color: var(--bg-tertiary); border-radius: 6px; position: relative; }
+    .gantt-bar { position: absolute; top: 0; height: 100%; border-radius: 6px; opacity: 0.85; cursor: pointer; display: flex; align-items: center; padding: 0 0.5rem; color: white; font-size: 0.65rem; font-weight: 600; }
+
+    .expiry-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .expiry-item { background-color: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.75rem; display: flex; flex-direction: column; gap: 0.3rem; cursor: pointer; }
+    .expiry-item:hover { border-color: var(--accent); }
+    .expiry-header { display: flex; justify-content: space-between; align-items: center; }
+    .expiry-title { font-weight: 600; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; }
+    .expiry-dates { font-size: 0.75rem; color: var(--text-muted); }
+    .expiry-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 0.2rem; font-size: 0.8rem; }
+    .expiry-cost { font-weight: 700; }
+
+    .badge { padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+    .badge-urgente { background-color: var(--danger-bg); color: var(--danger); }
+    .badge-inarrivo { background-color: var(--warning-bg); color: var(--warning); }
+    .badge-ok { background-color: var(--success-bg); color: var(--success); }
+    .cat-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal { background-color: var(--bg-secondary); border-radius: var(--radius); width: 100%; max-width: 480px; padding: 1.5rem; border: 1px solid var(--border-color); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .modal-header h3 { font-size: 1.1rem; font-weight: 700; }
+    .btn-close { background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer; }
+
+    .form-group { margin-bottom: 0.8rem; display: flex; flex-direction: column; gap: 0.3rem; }
+    .form-group label { font-size: 0.8rem; font-weight: 600; }
+    .form-control { width: 100%; padding: 0.5rem 0.7rem; border-radius: var(--radius); border: 1px solid var(--border-color); background-color: var(--bg-primary); color: var(--text-main); font-size: 0.85rem; outline: none; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.2rem; }
+
+    .mobile-tab-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--bg-secondary); border-top: 1px solid var(--border-color); z-index: 50; height: 55px; }
+    .mobile-tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.65rem; color: var(--text-muted); background: none; border: none; }
+    .mobile-tab-item.active { color: var(--accent); font-weight: 600; }  
+    .gantt-mobile-list { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; overflow: visible; }
+    .gantt-mobile-card { background-color: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.85rem; display: flex; flex-direction: column; gap: 0.55rem; }
+    .gantt-mobile-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
+    .gantt-mobile-title { font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; }
+    .gantt-mobile-car { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem; }
+    .gantt-mobile-dates { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
+    .gantt-mobile-progress { height: 12px; background: var(--bg-tertiary); border-radius: 999px; overflow: hidden; position: relative; }
+    .gantt-mobile-progress-bar { position: absolute; top: 0; left: 0; height: 100%; min-width: 10px; border-radius: 999px; transition: left 0.25s ease, width 0.25s ease; }
+    .gantt-mobile-days { font-size: 0.72rem; color: var(--text-muted); display: flex; justify-content: space-between; gap: 0.5rem; }
+
+
+
+    /* Versione debug sempre visibile */
+    .debug-version {
+      position: fixed;
+      right: 10px;
+      bottom: 64px;
+      z-index: 9999;
+      background: var(--bg-secondary);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 10px;
+      box-shadow: var(--shadow-sm);
+      pointer-events: none;
+    }
+
+    /* Coperture e Scadenze: timeline unica */
+    .coverage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    .coverage-header-main { display: flex; flex-direction: column; gap: 0.25rem; }
+    .coverage-version { font-size: 0.7rem; color: var(--text-muted); font-weight: 500; }
+    .coverage-year-actions { display: inline-flex; gap: 0.35rem; flex-shrink: 0; }
+    .coverage-scroll { overflow-x: auto; padding-bottom: 0.25rem; }
+    .coverage-months {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      min-width: 620px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+      margin-bottom: 0.85rem;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .coverage-months span { text-align: center; }
+    .coverage-list { min-width: 620px; display: flex; flex-direction: column; gap: 0.8rem; }
+    .coverage-item {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 0.85rem;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .coverage-item:hover { border-color: var(--accent); }
+    .coverage-meta {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.65rem;
+    }
+    .coverage-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      line-height: 1.25;
+    }
+    .coverage-car { margin-top: 0.15rem; font-size: 0.75rem; color: var(--text-muted); }
+    .coverage-kind {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .coverage-track {
+      position: relative;
+      height: 18px;
+      background: var(--bg-tertiary);
+      border-radius: 999px;
+      overflow: visible;
+      margin: 0.35rem 0 0.55rem;
+    }
+    .coverage-bar {
+      position: absolute;
+      top: 3px;
+      height: 12px;
+      border-radius: 999px;
+      min-width: 8px;
+      opacity: 0.92;
+    }
+    .coverage-point,
+    .coverage-end-point {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 3px solid var(--bg-secondary);
+      box-shadow: 0 1px 4px rgb(15 23 42 / 0.18);
+      z-index: 2;
+    }
+    .coverage-continuation {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 800;
+      border: 3px solid var(--bg-secondary);
+      box-shadow: 0 1px 4px rgb(15 23 42 / 0.18);
+      z-index: 2;
+    }
+    .coverage-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      line-height: 1.25;
+    }
+    .coverage-empty {
+      min-width: 620px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 0.75rem;
+      background: var(--bg-primary);
+      border-radius: var(--radius);
+      border: 1px dashed var(--border-color);
+    }
+
+    @media (max-width: 900px) {
+      .debug-version { bottom: 62px; right: 8px; font-size: 9px; }
+      .coverage-header { align-items: center; }
+      .coverage-scroll { overflow-x: auto; }
+      .coverage-months,
+      .coverage-list,
+      .coverage-empty { min-width: 720px; }
+      .coverage-item { padding: 0.8rem; }
+      .coverage-name { font-size: 0.86rem; }
+      .coverage-track { height: 20px; }
+      .coverage-bar { top: 4px; height: 12px; }
+      .coverage-info { font-size: 0.72rem; }
+    }
+
+    @media (max-width: 900px) {
+
+      body { flex-direction: column; overflow-x: hidden; }
+      .main-content { padding: 1rem; width: 100%; max-width: 100vw; overflow-x: hidden; }
+      .view-card { width: 100%; max-width: 100%; overflow: visible; }
+      .timeline-container { overflow-x:auto; overflow-y:visible; padding-bottom:28px; }
+      .timeline-track { height:76px !important; overflow:visible; }
+      .timeline-marker { z-index:20; }
+      .gantt-container { min-width: 0; overflow: visible; }
+
+      .app-container { height: calc(100vh - 55px); }
+      .sidebar { width: 100%; height: 100%; display: none; }
+      .sidebar.mobile-active { display: flex; }
+      .main-content.mobile-hidden { display: none; }
+      .detail-panel { width: 100%; height: 100%; border-left: none; display: none; }
+      .detail-panel.mobile-active { display: flex; }
+      .mobile-tab-bar { display: flex; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <h1>Auto Scadenze</h1>
+        <button class="btn btn-secondary btn-sm" id="btnSettings" title="Impostazioni GitHub" style="width: auto;">⚙️ Config</button>
+      </div>
+
+      <div class="sync-status">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncText">Sincronizzazione...</span>
+      </div>
+
+      <div class="car-list-container">
+        <div class="section-title">
+          Le Tue Auto
+          <span id="carCountBadge" class="badge badge-ok">0</span>
+        </div>
+        <div id="carList"></div>
+      </div>
+
+      <div class="sidebar-actions">
+        <button class="btn btn-secondary" id="btnOpenAddCar">+ Nuova Auto</button>
+      </div>
+    </aside>
+
+    <main class="main-content" id="mainContent">
+      <div class="dashboard-header">
+        <div class="dashboard-title">
+          <h2 id="dashboardCarTitle">Tutte le Auto</h2>
+          <p id="dashboardCarSubtitle">Panoramica generale</p>
+        </div>
+        <button class="btn btn-primary" id="btnOpenAddExpiry" style="width: auto;">+ Nuova Scadenza</button>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card urgent">
+          <div class="kpi-label">Entro 30 giorni</div>
+          <div class="kpi-value" id="kpiUrgentCount">0</div>
+        </div>
+        <div class="kpi-card info">
+          <div class="kpi-label">Spesa stimata (90 gg)</div>
+          <div class="kpi-value" id="kpiCost90">0 €</div>
+        </div>
+      </div>
+      <div class="view-card" id="coverageUnifiedCard">
+        <div class="coverage-header">
+          <div class="coverage-header-main">
+            <div class="view-card-title" style="margin-bottom:0;">Coperture e Scadenze <span id="coverageYearLabel"></span></div>
+            <div class="coverage-version" id="appVersionInline">Versione v2026.08.03-1501</div>
+          </div>
+          <div class="coverage-year-actions">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="changeYear(-1)" style="width:auto;">‹</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="changeYear(1)" style="width:auto;">›</button>
+          </div>
+        </div>
+        <div class="coverage-scroll">
+          <div class="coverage-months" id="coverageMonths"></div>
+          <div class="coverage-list" id="coverageTimelineList"></div>
+        </div>
+      </div>
+        <div class="gantt-container" id="ganttContainer"></div>
+      </div>
+    </main>
+
+    <aside class="detail-panel" id="detailPanel">
+      <div class="detail-header">Dettaglio Scadenze</div>
+      <div class="detail-body">
+        <div id="nextExpiryHighlight"></div>
+        <div class="section-title">Elenco Completo</div>
+        <div class="expiry-list" id="expiryList"></div>
+      </div>
+    </aside>
+  </div>
+
+  <nav class="mobile-tab-bar" id="mobileTabBar">
+    <button class="mobile-tab-item active" data-target="mainContent">Dashboard</button>
+    <button class="mobile-tab-item" data-target="sidebar">Auto</button>
+    <button class="mobile-tab-item" data-target="detailPanel">Dettagli</button>
+  </nav>
+
+  <div id="debugVersion" class="debug-version">v2026.08.03-1501</div>
+
+  <!-- MODALE CONFIGURAZIONE GITHUB -->
+  <div class="modal-overlay" id="modalSettings">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Configurazione Sincronizzazione Cloud</h3>
+        <button class="btn-close closeModalBtn">&times;</button>
+      </div>
+      <form id="formSettings">
+        <div class="form-group">
+          <label>Username GitHub *</label>
+          <input type="text" id="ghUser" class="form-control" placeholder="es. mario-rossi" required>
+        </div>
+        <div class="form-group">
+          <label>Nome Repository *</label>
+          <input type="text" id="ghRepo" class="form-control" placeholder="es. auto-scadenze" required>
+        </div>
+        <div class="form-group">
+          <label>Personal Access Token (Fine-grained o Classic) *</label>
+          <input type="password" id="ghToken" class="form-control" placeholder="github_pat_..." required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary closeModalBtn">Chiudi</button>
+          <button type="submit" class="btn btn-primary">Salva & Connetti</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODALI AUTO E SCADENZE -->
+  <div class="modal-overlay" id="modalCar">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Aggiungi Auto</h3>
+        <button class="btn-close closeModalBtn">&times;</button>
+      </div>
+      <form id="formCar">
+        <div class="form-group">
+          <label>Nome Modello *</label>
+          <input type="text" id="carName" class="form-control" placeholder="Es. Audi A4" required>
+        </div>
+        <div class="form-group">
+          <label>Targa *</label>
+          <input type="text" id="carPlate" class="form-control" placeholder="Es. AB123CD" required style="text-transform:uppercase;">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary closeModalBtn">Annulla</button>
+          <button type="submit" class="btn btn-primary">Salva Auto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalExpiry">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalExpiryTitle">Aggiungi Scadenza</h3>
+        <button class="btn-close closeModalBtn">&times;</button>
+      </div>
+      <form id="formExpiry">
+        <input type="hidden" id="expiryId">
+        <div class="form-group">
+          <label>Auto *</label>
+          <select id="expiryCarId" class="form-control" required></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo *</label>
+            <select id="expiryType" class="form-control" required>
+              <option value="bollo">Bollo</option>
+              <option value="revisione">Revisione</option>
+              <option value="assicurazione">Assicurazione RC</option>
+              <option value="assistenza">Assistenza Stradale</option>
+              <option value="gomme">Cambio Gomme</option>
+              <option value="tagliando">Tagliando</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Costo (€)</label>
+            <input type="number" step="0.01" id="expiryCost" class="form-control">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Data Scadenza *</label>
+            <input type="date" id="expiryDate" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Data Fine (Opzionale)</label>
+            <input type="date" id="expiryEndDate" class="form-control">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Note</label>
+          <textarea id="expiryNotes" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary closeModalBtn">Annulla</button>
+          <button type="submit" class="btn btn-primary">Salva</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const APP_VERSION = 'v2026.08.03-1501';
+    const CATEGORIES = {
+      bollo: { label: 'Bollo', color: 'var(--cat-bollo)' },
+      revisione: { label: 'Revisione', color: 'var(--cat-revisione)' },
+      assicurazione: { label: 'Assicurazione', color: 'var(--cat-assicurazione)' },
+      assistenza: { label: 'Assistenza', color: 'var(--cat-assistenza)' },
+      gomme: { label: 'Gomme', color: 'var(--cat-gomme)' },
+      tagliando: { label: 'Tagliando', color: 'var(--cat-tagliando)' }
+    };
+
+    let cars = [];
+    let selectedCarId = 'all';
+    let fileSha = ''; // Necessario per fare i commit tramite API di GitHub
+    let currentYear = new Date().getFullYear();
+
+    function changeYear(delta) {
+      currentYear += delta;
+      renderUnifiedTimeline();
+    }
+
+    let config = {
+      user: localStorage.getItem('gh_user') || '',
+      repo: localStorage.getItem('gh_repo') || '',
+      token: localStorage.getItem('gh_token') || ''
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      setupEventListeners();
+      if (document.getElementById('debugVersion')) document.getElementById('debugVersion').innerText = APP_VERSION;
+      if (document.getElementById('appVersionInline')) document.getElementById('appVersionInline').innerText = 'Versione ' + APP_VERSION;
+      window.addEventListener('resize', () => renderUnifiedTimeline());
+      if (!config.user || !config.repo || !config.token) {
+        openModal('modalSettings');
+        updateSyncStatus('error', 'Token/Repo non configurati');
+      } else {
+        fetchDataFromGitHub();
+      }
+    });
+
+    function updateSyncStatus(type, text) {
+      const dot = document.getElementById('syncDot');
+      const label = document.getElementById('syncText');
+      dot.className = `sync-dot ${type}`;
+      label.innerText = text;
+    }
+
+    /* ==========================================
+       GITHUB API INTEGRATION (READ & WRITE)
+       ========================================== */
+    async function fetchDataFromGitHub() {
+      updateSyncStatus('syncing', 'Sincronizzazione in corso...');
+      const url = `https://api.github.com/repos/${config.user}/${config.repo}/contents/data.json`;
+
+      try {
+        const res = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${config.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+
+        if (!res.ok) throw new Error('Errore durante la lettura da GitHub');
+
+        const data = await res.json();
+        fileSha = data.sha;
+        const cleanContent = String(data.content || '').replace(/\s/g, '');
+        const decodedContent = new TextDecoder('utf-8').decode(Uint8Array.from(atob(cleanContent), c => c.charCodeAt(0)));
+        cars = JSON.parse(decodedContent);
+
+        updateSyncStatus('online', 'Sincronizzato con GitHub');
+        renderApp();
+      } catch (err) {
+        console.error(err);
+        updateSyncStatus('error', 'Errore di sincronizzazione');
+      }
+    }
+
+    async function saveDataToGitHub() {
+      updateSyncStatus('syncing', 'Salvataggio su cloud...');
+      const url = `https://api.github.com/repos/${config.user}/${config.repo}/contents/data.json`;
+      
+      const jsonString = JSON.stringify(cars, null, 2);
+      const encodedContent = btoa(unescape(encodeURIComponent(jsonString)));
+
+      const bodyData = {
+        message: 'Aggiornamento scadenze da Web App',
+        content: encodedContent,
+        sha: fileSha
+      };
+
+      try {
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${config.token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json'
+          },
+          body: JSON.stringify(bodyData)
+        });
+
+        if (!res.ok) throw new Error('Errore durante il salvataggio su GitHub');
+
+        const responseData = await res.json();
+        fileSha = responseData.content.sha;
+
+        updateSyncStatus('online', 'Sincronizzato con GitHub');
+        renderApp();
+      } catch (err) {
+        console.error(err);
+        alert('Impossibile salvare i dati su GitHub. Controlla il token o la connessione.');
+        updateSyncStatus('error', 'Errore salvataggio');
+      }
+    }
+
+    /* ==========================================
+       RENDER UI
+       ========================================== */
+    function renderApp() {
+      renderCarList();
+      renderKPI();
+      renderUnifiedTimeline();
+      renderDetailPanel();
+    }
+
+    function renderCarList() {
+      const carListEl = document.getElementById('carList');
+      document.getElementById('carCountBadge').innerText = cars.length;
+
+      let html = `
+        <div class="car-item ${selectedCarId === 'all' ? 'active' : ''}" onclick="selectCar('all')">
+          <div class="car-info">
+            <div class="car-name">Tutte le Auto</div>
+            <div class="car-plate">Vista Globale</div>
+          </div>
+        </div>
+      `;
+
+      html += cars.map(car => `
+        <div class="car-item ${selectedCarId === car.id ? 'active' : ''}" onclick="selectCar('${car.id}')">
+          <div class="car-info">
+            <div class="car-name">${escapeHtml(car.name)}</div>
+            <div class="car-plate">${escapeHtml(car.plate)}</div>
+          </div>
+          <button class="btn-delete-car" onclick="event.stopPropagation(); deleteCar('${car.id}')">🗑️</button>
+        </div>
+      `).join('');
+
+      carListEl.innerHTML = html;
+    }
+
+    function selectCar(id) {
+      selectedCarId = id;
+      renderApp();
+    }
+
+    function renderKPI() {
+      const expiries = getAllExpiriesFiltered();
+      const now = new Date();
+      now.setHours(0,0,0,0);
+
+      let urgent = 0;
+      let cost90 = 0;
+
+      expiries.forEach(exp => {
+        const diffDays = Math.ceil((new Date(exp.date) - now) / (1000 * 60 * 60 * 24));
+        if (diffDays >= 0 && diffDays <= 30) urgent++;
+        if (diffDays >= 0 && diffDays <= 90) cost90 += Number(exp.cost) || 0;
+      });
+
+      document.getElementById('kpiUrgentCount').innerText = urgent;
+      document.getElementById('kpiCost90').innerText = `${cost90} €`;
+    }
+
+
+    function renderUnifiedTimeline() {
+      const monthsContainer = document.getElementById('coverageMonths');
+      const listContainer = document.getElementById('coverageTimelineList');
+      const yearLabel = document.getElementById('coverageYearLabel');
+      if (!monthsContainer || !listContainer || !yearLabel) return;
+
+      yearLabel.innerText = currentYear;
+      const monthsNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+      monthsContainer.innerHTML = monthsNames.map(m => `<span>${m}</span>`).join('');
+
+      const DAY = 1000 * 60 * 60 * 24;
+      const yearStart = new Date(currentYear, 0, 1);
+      const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59);
+      const yearDays = Math.max(1, Math.ceil((yearEnd - yearStart) / DAY));
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      function pct(date) {
+        return Math.min(98, Math.max(2, ((date - yearStart) / (yearEnd - yearStart)) * 100));
+      }
+
+      const items = getAllExpiriesFiltered()
+        .map(exp => {
+          const start = new Date(exp.date);
+          const hasPeriod = !!exp.endDate;
+          const end = hasPeriod ? new Date(exp.endDate) : start;
+          const visible = hasPeriod
+            ? (end >= yearStart && start <= yearEnd)
+            : (start.getFullYear() === currentYear);
+          return { exp, start, end, hasPeriod, visible };
+        })
+        .filter(item => item.visible)
+        .sort((a, b) => a.start - b.start || a.end - b.end);
+
+      if (items.length === 0) {
+        listContainer.innerHTML = `<div class="coverage-empty">Nessuna copertura o scadenza nel ${currentYear}.</div>`;
+        return;
+      }
+
+      listContainer.innerHTML = items.map(item => {
+        const exp = item.exp;
+        const catConfig = CATEGORIES[exp.type] || { label: exp.type || 'Scadenza', color: 'var(--accent)' };
+        const remainingDays = Math.ceil((item.end - today) / DAY);
+        const remainingLabel = remainingDays < 0 ? `Scaduta da ${Math.abs(remainingDays)} gg` : `${remainingDays} gg rimanenti`;
+        const itemTypeLabel = item.hasPeriod ? 'Periodo' : 'Data singola';
+        let visual = '';
+        let dateLabel = '';
+
+        if (item.hasPeriod) {
+          const visibleStart = item.start < yearStart ? yearStart : item.start;
+          const visibleEnd = item.end > yearEnd ? yearEnd : item.end;
+          const leftPct = pct(visibleStart);
+          const rightPct = pct(visibleEnd);
+          const widthPct = Math.max(2, rightPct - leftPct);
+          const endInYear = item.end >= yearStart && item.end <= yearEnd;
+          const continuation = item.end > yearEnd;
+          visual = `
+            <div class="coverage-bar" style="left:${leftPct}%; width:${widthPct}%; background-color:${catConfig.color};"></div>
+            ${endInYear ? `<div class="coverage-end-point" style="left:${rightPct}%; background-color:${catConfig.color};"></div>` : ''}
+            ${continuation ? `<div class="coverage-continuation" style="left:98%; background-color:${catConfig.color};">›</div>` : ''}
+          `;
+          dateLabel = `${formatDate(exp.date)} → ${formatDate(exp.endDate)}`;
+        } else {
+          const pointPct = pct(item.start);
+          visual = `<div class="coverage-point" style="left:${pointPct}%; background-color:${catConfig.color};"></div>`;
+          dateLabel = formatDate(exp.date);
+        }
+
+        return `
+          <div class="coverage-item" onclick="openEditExpiry('${exp.id}')">
+            <div class="coverage-meta">
+              <div>
+                <div class="coverage-name">
+                  <span class="cat-dot" style="background-color:${catConfig.color}"></span>
+                  ${escapeHtml(catConfig.label)}
+                </div>
+                <div class="coverage-car">${escapeHtml(exp.carName)} (${escapeHtml(exp.carPlate)})</div>
+              </div>
+              <span class="coverage-kind">${itemTypeLabel}</span>
+            </div>
+            <div class="coverage-track">${visual}</div>
+            <div class="coverage-info">
+              <span>${dateLabel}</span>
+              <span>${remainingLabel}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTimeline() {
+      const monthsContainer = document.getElementById('timelineMonths');
+      const trackContainer = document.getElementById('timelineTrack');
+      if (!monthsContainer || !trackContainer) return;
+      document.getElementById('timelineYearLabel').innerText = currentYear;
+
+      const monthsNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+      monthsContainer.innerHTML = monthsNames.map(m => `<div class="month-col">${m}</div>`).join('');
+      trackContainer.innerHTML = '';
+
+      const startOfYear = new Date(currentYear, 0, 1);
+      const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59);
+
+      getAllExpiriesFiltered().forEach(exp => {
+        const d = new Date(exp.date);
+        if (d.getFullYear() === currentYear) {
+          const posPercent = ((d - startOfYear) / (endOfYear - startOfYear)) * 100;
+          const catConfig = CATEGORIES[exp.type] || { label: exp.type || 'Scadenza', color: 'var(--accent)' };
+          const marker = document.createElement('div');
+          marker.className = 'timeline-marker';
+          marker.style.left = `${Math.min(Math.max(posPercent, 2), 98)}%`;
+          marker.style.backgroundColor = catConfig.color;
+          marker.innerText = d.getDate();
+          marker.title = `${catConfig.label} - ${formatDate(exp.date)}`;
+          marker.onclick = () => openEditExpiry(exp.id);
+          trackContainer.appendChild(marker);
+        }
+      });
+    }
+    function renderGantt() {
+      const container = document.getElementById('ganttContainer');
+      if (!container || !document.getElementById('ganttYearLabel')) return;
+      document.getElementById('ganttYearLabel').innerText = currentYear;
+
+      const yearStart = new Date(currentYear, 0, 1);
+      const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59);
+
+      const expiries = getAllExpiriesFiltered()
+        .filter(e => e.endDate)
+        .filter(e => {
+          const start = new Date(e.date);
+          const end = new Date(e.endDate);
+          return end >= yearStart && start <= yearEnd;
+        });
+
+      if (expiries.length === 0) {
+        container.className = 'gantt-container';
+        container.innerHTML = `<div style="font-size:0.8rem; color:var(--text-muted);">Nessuna copertura valida nel ${currentYear}.</div>`;
+        return;
+      }
+
+      const isMobile = window.matchMedia('(max-width: 900px)').matches;
+
+      if (isMobile) {
+        container.className = 'gantt-container gantt-mobile-list';
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        container.innerHTML = expiries
+          .sort((a, b) => new Date(a.endDate) - new Date(b.endDate))
+          .map(exp => {
+            const start = new Date(exp.date);
+            const end = new Date(exp.endDate);
+            const visibleStart = start < yearStart ? yearStart : start;
+            const visibleEnd = end > yearEnd ? yearEnd : end;
+            const DAY = 1000 * 60 * 60 * 24;
+            const yearDays = Math.max(1, Math.ceil((yearEnd - yearStart) / DAY));
+            const startOffsetDays = Math.max(0, Math.ceil((visibleStart - yearStart) / DAY));
+            const visibleDays = Math.max(1, Math.ceil((visibleEnd - visibleStart) / DAY));
+            const leftPct = Math.min(98, Math.max(0, (startOffsetDays / yearDays) * 100));
+            const widthPct = Math.min(100 - leftPct, Math.max(2, (visibleDays / yearDays) * 100));
+            const remainingDays = Math.ceil((end - today) / DAY);
+            const catConfig = CATEGORIES[exp.type] || { label: exp.type || 'Scadenza', color: 'var(--accent)' };
+            const remainingLabel = remainingDays < 0 ? `Scaduta da ${Math.abs(remainingDays)} gg` : `${remainingDays} gg rimanenti`;
+
+            return `
+              <div class="gantt-mobile-card" onclick="openEditExpiry('${exp.id}')">
+                <div class="gantt-mobile-head">
+                  <div>
+                    <div class="gantt-mobile-title">
+                      <span class="cat-dot" style="background-color: ${catConfig.color}"></span>
+                      ${escapeHtml(catConfig.label)}
+                    </div>
+                    <div class="gantt-mobile-car">${escapeHtml(exp.carName)} (${escapeHtml(exp.carPlate)})</div>
+                  </div>
+                  <div class="gantt-mobile-dates">${formatDate(exp.date)} → ${formatDate(exp.endDate)}</div>
+                </div>
+                <div class="gantt-mobile-progress">
+                  <div class="gantt-mobile-progress-bar" style="left: ${leftPct}%; width: ${widthPct}%; background-color: ${catConfig.color};"></div>
+                </div>
+                <div class="gantt-mobile-days">
+                  <span>${formatDate(toIsoDate(visibleStart))} → ${formatDate(toIsoDate(visibleEnd))}</span>
+                  <span>${remainingLabel}</span>
+                </div>
+              </div>
+            `;
+          }).join('');
+        return;
+      }
+
+      container.className = 'gantt-container';
+      container.innerHTML = expiries.map(exp => {
+        const start = new Date(exp.date);
+        const end = new Date(exp.endDate);
+        const clippedStart = start < yearStart ? yearStart : start;
+        const clippedEnd = end > yearEnd ? yearEnd : end;
+
+        let startPct = Math.max(0, Math.min(100, ((clippedStart - yearStart) / (yearEnd - yearStart)) * 100));
+        let endPct = Math.max(0, Math.min(100, ((clippedEnd - yearStart) / (yearEnd - yearStart)) * 100));
+        let widthPct = Math.max(2, endPct - startPct);
+        const catConfig = CATEGORIES[exp.type] || { label: exp.type || 'Scadenza', color: 'var(--accent)' };
+
+        return `
+          <div class="gantt-row">
+            <div class="gantt-label">${escapeHtml(exp.carName)}</div>
+            <div class="gantt-track-bg">
+              <div class="gantt-bar" style="left: ${startPct}%; width: ${widthPct}%; background-color: ${catConfig.color};" title="${catConfig.label}: ${formatDate(exp.date)} → ${formatDate(exp.endDate)}">
+                ${escapeHtml(catConfig.label)}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    function renderDetailPanel() {
+      const expiries = getAllExpiriesFiltered();
+      expiries.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      const listEl = document.getElementById('expiryList');
+
+      if (expiries.length === 0) {
+        listEl.innerHTML = `<div style="font-size:0.8rem; color:var(--text-muted);">Nessuna scadenza inserita.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = expiries.map(exp => {
+        const catConfig = CATEGORIES[exp.type];
+        return `
+          <div class="expiry-item" onclick="openEditExpiry('${exp.id}')">
+            <div class="expiry-header">
+              <div class="expiry-title">
+                <span class="cat-dot" style="background-color: ${catConfig.color}"></span>
+                ${catConfig.label}
+              </div>
+            </div>
+            <div class="expiry-dates">${escapeHtml(exp.carName)} (${escapeHtml(exp.carPlate)})</div>
+            <div class="expiry-dates">Data: ${formatDate(exp.date)} ${exp.endDate ? '→ ' + formatDate(exp.endDate) : ''}</div>
+            <div class="expiry-footer">
+              <span class="expiry-cost">${exp.cost ? exp.cost + ' €' : ''}</span>
+              <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteExpiry('${exp.id}')">Elimina</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* ==========================================
+       AZIONI
+       ========================================== */
+    function deleteCar(id) {
+      if (confirm('Eliminare questa auto e le relative scadenze?')) {
+        cars = cars.filter(c => c.id !== id);
+        if (selectedCarId === id) selectedCarId = 'all';
+        saveDataToGitHub();
+      }
+    }
+
+    function deleteExpiry(expId) {
+      if (confirm('Eliminare questa scadenza?')) {
+        cars.forEach(car => car.expiries = car.expiries.filter(e => e.id !== expId));
+        saveDataToGitHub();
+      }
+    }
+
+    function getAllExpiriesFiltered() {
+      let list = [];
+      cars.forEach(car => {
+        if (selectedCarId === 'all' || selectedCarId === car.id) {
+          car.expiries.forEach(exp => {
+            list.push({ ...exp, carId: car.id, carName: car.name, carPlate: car.plate });
+          });
+        }
+      });
+      return list;
+    }
+
+    function openEditExpiry(expId) {
+      let foundExp = null;
+      let foundCarId = null;
+
+      cars.forEach(car => {
+        const e = car.expiries.find(x => x.id === expId);
+        if (e) { foundExp = e; foundCarId = car.id; }
+      });
+
+      if (!foundExp) return;
+
+      populateCarSelect(foundCarId);
+      document.getElementById('modalExpiryTitle').innerText = 'Modifica Scadenza';
+      document.getElementById('expiryId').value = foundExp.id;
+      document.getElementById('expiryCarId').value = foundCarId;
+      document.getElementById('expiryType').value = foundExp.type;
+      document.getElementById('expiryCost').value = foundExp.cost || '';
+      document.getElementById('expiryDate').value = foundExp.date;
+      document.getElementById('expiryEndDate').value = foundExp.endDate || '';
+      document.getElementById('expiryNotes').value = foundExp.notes || '';
+
+      openModal('modalExpiry');
+    }
+
+    function populateCarSelect(defaultCarId) {
+      const select = document.getElementById('expiryCarId');
+      select.innerHTML = cars.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${escapeHtml(c.plate)})</option>`).join('');
+      if (defaultCarId) select.value = defaultCarId;
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    function setupEventListeners() {
+      document.getElementById('btnSettings').addEventListener('click', () => {
+        document.getElementById('ghUser').value = config.user;
+        document.getElementById('ghRepo').value = config.repo;
+        document.getElementById('ghToken').value = config.token;
+        openModal('modalSettings');
+      });
+
+      document.getElementById('formSettings').addEventListener('submit', (e) => {
+        e.preventDefault();
+        config.user = document.getElementById('ghUser').value.trim();
+        config.repo = document.getElementById('ghRepo').value.trim();
+        config.token = document.getElementById('ghToken').value.trim();
+
+        localStorage.setItem('gh_user', config.user);
+        localStorage.setItem('gh_repo', config.repo);
+        localStorage.setItem('gh_token', config.token);
+
+        closeModal('modalSettings');
+        fetchDataFromGitHub();
+      });
+
+      document.getElementById('btnOpenAddCar').addEventListener('click', () => {
+        document.getElementById('formCar').reset();
+        openModal('modalCar');
+      });
+
+      document.getElementById('btnOpenAddExpiry').addEventListener('click', () => {
+        if (cars.length === 0) return alert('Aggiungi prima un\'auto.');
+        document.getElementById('formExpiry').reset();
+        document.getElementById('expiryId').value = '';
+        populateCarSelect();
+        openModal('modalExpiry');
+      });
+
+      document.querySelectorAll('.closeModalBtn').forEach(b => {
+        b.addEventListener('click', () => {
+          closeModal('modalCar');
+          closeModal('modalExpiry');
+          closeModal('modalSettings');
+        });
+      });
+
+      document.getElementById('formCar').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('carName').value.trim();
+        const plate = document.getElementById('carPlate').value.trim().toUpperCase();
+
+        if (name && plate) {
+          cars.push({ id: 'car-' + Date.now(), name, plate, expiries: [] });
+          saveDataToGitHub();
+          closeModal('modalCar');
+        }
+      });
+
+      document.getElementById('formExpiry').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const expId = document.getElementById('expiryId').value;
+        const carId = document.getElementById('expiryCarId').value;
+        const type = document.getElementById('expiryType').value;
+        const cost = parseFloat(document.getElementById('expiryCost').value) || 0;
+        const date = document.getElementById('expiryDate').value;
+        const endDate = document.getElementById('expiryEndDate').value;
+        const notes = document.getElementById('expiryNotes').value.trim();
+
+        if (expId) {
+          cars.forEach(car => car.expiries = car.expiries.filter(x => x.id !== expId));
+        }
+
+        const targetCar = cars.find(c => c.id === carId);
+        if (targetCar) {
+          targetCar.expiries.push({ id: expId || 'exp-' + Date.now(), type, cost, date, endDate, notes });
+        }
+
+        saveDataToGitHub();
+        closeModal('modalExpiry');
+      });
+
+      document.querySelectorAll('.mobile-tab-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.mobile-tab-item').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          const target = btn.getAttribute('data-target');
+          document.getElementById('sidebar').classList.remove('mobile-active');
+          document.getElementById('mainContent').classList.add('mobile-hidden');
+          document.getElementById('detailPanel').classList.remove('mobile-active');
+
+          if (target === 'sidebar') document.getElementById('sidebar').classList.add('mobile-active');
+          else if (target === 'mainContent') document.getElementById('mainContent').classList.remove('mobile-hidden');
+          else if (target === 'detailPanel') document.getElementById('detailPanel').classList.add('mobile-active');
+        });
+      });
+    }
+
+    function toIsoDate(date) {
+      return date.toISOString().slice(0, 10);
+    }
+
+    function formatDate(d) {
+      if (!d) return '';
+      const p = d.split('-');
+      return `${p[2]}/${p[1]}/${p[0]}`;
+    }
+
+    function escapeHtml(str = '') {
+      return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      }[m]));
+    }
+  </script>
+</body>
+</html>
