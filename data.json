@@ -61,14 +61,6 @@
     "plate": "DV310NF",
     "expiries": [
       {
-        "id": "exp-1785752480041",
-        "type": "bollo",
-        "cost": 55,
-        "date": "2026-08-21",
-        "endDate": "",
-        "notes": ""
-      },
-      {
         "id": "exp-1785754976404",
         "type": "tagliando",
         "cost": 200,
