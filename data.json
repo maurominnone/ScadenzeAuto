@@ -43,14 +43,6 @@
         "date": "2026-09-06",
         "endDate": "",
         "notes": ""
-      },
-      {
-        "id": "exp-1785747250093",
-        "type": "assistenza",
-        "cost": 400,
-        "date": "2026-08-03",
-        "endDate": "2026-10-31",
-        "notes": ""
       }
     ]
   },
