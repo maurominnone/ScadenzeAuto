@@ -34,7 +34,8 @@
         "cost": 212,
         "date": "2025-11-30",
         "endDate": "2026-11-30",
-        "notes": ""
+        "notes": "",
+        "insurer": "Linear"
       }
     ],
     "archived": false
