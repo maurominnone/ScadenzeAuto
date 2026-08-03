@@ -269,7 +269,7 @@
       </div>
 
       <div class="view-card">
-        <div class="view-card-title">Coperture e Validià (Gantt) - <span id="ganttYearLabel"></span><div style="display:inline-flex;gap:0.3rem;margin-left:0.5rem;"><button type="button" class="btn btn-secondary btn-sm" onclick="changeYear(-1)" style="width:auto;">‹</button><button type="button" class="btn btn-secondary btn-sm" onclick="changeYear(1)" style="width:auto;">›</button></div></div>
+        <div class="view-card-title">Coperture e Validità (Gantt) - <span id="ganttYearLabel"></span><div style="display:inline-flex;gap:0.3rem;margin-left:0.5rem;"><button type="button" class="btn btn-secondary btn-sm" onclick="changeYear(-1)" style="width:auto;">‹</button><button type="button" class="btn btn-secondary btn-sm" onclick="changeYear(1)" style="width:auto;">›</button></div></div>
         <div class="gantt-container" id="ganttContainer"></div>
       </div>
     </main>
@@ -405,7 +405,14 @@
 
     let cars = [];
     let selectedCarId = 'all';
-    let fileSha = ''; // Necessario per fare i commit tramite API di GitHub     let currentYear = new Date().getFullYear();     function changeYear(delta) { currentYear += delta; renderTimeline(); renderGantt(); }
+    let fileSha = ''; // Necessario per fare i commit tramite API di GitHub
+    let currentYear = new Date().getFullYear();
+
+    function changeYear(delta) {
+      currentYear += delta;
+      renderTimeline();
+      renderGantt();
+    }
 
     let config = {
       user: localStorage.getItem('gh_user') || '',
@@ -562,8 +569,8 @@
       const monthsContainer = document.getElementById('timelineMonths');
       const trackContainer = document.getElementById('timelineTrack');
       const now = new Date();
-      document.getElementById('timelineYearLabel').innerText = currentYear; const monthsNames
-      const monthsNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giun', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+      document.getElementById('timelineYearLabel').innerText = currentYear;
+      const monthsNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
 
       monthsContainer.innerHTML = monthsNames.map(m => `<div class="month-col">${m}</div>`).join('');
       trackContainer.innerHTML = '';
@@ -589,13 +596,13 @@
     function renderGantt() {
       const container = document.getElementById('ganttContainer');
       const expiries = getAllExpiriesFiltered().filter(e => e.endDate);
+      document.getElementById('ganttYearLabel').innerText = currentYear;
 
       if (expiries.length === 0) {
         container.innerHTML = `<div style="font-size:0.8rem; color:var(--text-muted);">Nessuna copertura inserita.</div>`;
         return;
       }
 
-      const currentYear = new Date().getFullYear();
       const startOfYear = new Date(currentYear, 0, 1);
       const endOfYear = new Date(currentYear, 11, 31);
 
@@ -634,7 +641,14 @@
       }
 
       listEl.innerHTML = expiries.map(exp => {
-        const catConfig = CATEGORIES[exp.type];
+        const catConfig = CATEGORIES[exp.type] || { label: exp.type || 'Scadenza', color: 'var(--accent)' };
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const expDate = new Date(exp.date);
+        const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+        let statusBadge = '<span class="badge badge-ok">OK</span>';
+        if (diffDays < 0) statusBadge = '<span class="badge badge-urgente">SCADUTA</span>';
+        else if (diffDays <= 30) statusBadge = '<span class="badge badge-inarrivo">IN ARRIVO</span>';
         return `
           <div class="expiry-item" onclick="openEditExpiry('${exp.id}')">
             <div class="expiry-header">
@@ -766,6 +780,11 @@
         const plate = document.getElementById('carPlate').value.trim().toUpperCase();
 
         if (name && plate) {
+          const alreadyExists = cars.some(c => c.plate.toUpperCase() === plate.toUpperCase());
+          if (alreadyExists) {
+            alert('Questa targa esiste già. Inserisci una targa diversa.');
+            return;
+          }
           cars.push({ id: 'car-' + Date.now(), name, plate, expiries: [] });
           saveDataToGitHub();
           closeModal('modalCar');
@@ -818,8 +837,14 @@
       return `${p[2]}/${p[1]}/${p[0]}`;
     }
 
-    function escapeHtml(str) {
-      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
+    function escapeHtml(str = '') {
+      return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      }[m]));
     }
   </script>
 </body>
