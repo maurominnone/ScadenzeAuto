@@ -3,6 +3,15 @@
     "id": "car-1785747178765",
     "name": "Auto uno",
     "plate": "AB123C",
-    "expiries": []
+    "expiries": [
+      {
+        "id": "exp-1785747192769",
+        "type": "bollo",
+        "cost": 100,
+        "date": "2026-08-30",
+        "endDate": "",
+        "notes": ""
+      }
+    ]
   }
 ]
